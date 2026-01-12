@@ -52,7 +52,7 @@ export default function Register() {
 
       console.log("REGISTER PAYLOAD:", payload);
 
-      const res = await fetch("http://localhost:4000/auth/register", {
+      const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
