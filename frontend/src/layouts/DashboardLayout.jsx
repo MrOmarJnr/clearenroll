@@ -61,6 +61,9 @@ export default function DashboardLayout() {
       "/verify",
       "/verify/enrollment",
       "/students",
+        "/students/add",
+        "/parents",
+      "/parents/add",
     ],
 
     TEST_RECEIVING_SCHOOL: [
