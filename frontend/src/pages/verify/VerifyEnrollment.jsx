@@ -116,20 +116,20 @@ export default function VerifyEnrollment() {
 
           {result.status === "NOT_FOUND" && (
             <div>
-              ❌ <b>NOT FOUND</b> — Student must be onboarded before enrollment.
+               <b>NOT FOUND</b> — Student must be onboarded before enrollment.
             </div>
           )}
 
           {result.status === "MULTIPLE_MATCHES" && (
             <div className="danger">
-              ⚠️ <b>MULTIPLE MATCHES</b> — Manual review required.
+               <b>MULTIPLE MATCHES</b> — Manual review required.
             </div>
           )}
 
-          {/* ✅ NEW: DUPLICATE PENDING */}
+          {/*  NEW: DUPLICATE PENDING */}
           {result.status === "DUPLICATE_PENDING" && (
             <div className="danger">
-              🚫 <b>BLOCKED (Duplicate Pending)</b>
+               <b>BLOCKED (Duplicate Pending)</b>
               <br />
               Student <b>{result.student?.name}</b> has a pending duplicate
               review.
@@ -139,7 +139,7 @@ export default function VerifyEnrollment() {
           )}
           {result.status === "DISPUTED" && (
   <div className="warning">
-    ⚠️ <b>DISPUTE IN PROGRESS</b>
+     <b>DISPUTE IN PROGRESS</b>
     <br />
     Enrollment is blocked until the dispute is resolved.
   </div>
@@ -150,7 +150,7 @@ export default function VerifyEnrollment() {
   result.consent_status === "APPROVED" && (
 
             <div className="danger">
-              🚫 <b>BLOCKED (Outstanding Fees)</b>
+               <b>BLOCKED (Outstanding Fees)</b>
               <br />
               Student <b>{result.student?.name}</b>
               <br />
@@ -159,7 +159,7 @@ export default function VerifyEnrollment() {
           )}
           {result.status === "FLAGGED" && result.consent_status !== "APPROVED" && (
   <div className="warning">
-    🔒 <b>RECORD FOUND – CONSENT REQUIRED</b>
+     <b>RECORD FOUND – CONSENT REQUIRED</b>
     <br />
     Fee clearance details cannot be viewed until parental consent is approved.
   </div>
@@ -168,7 +168,7 @@ export default function VerifyEnrollment() {
 
           {result.status === "CLEAR" && (
             <div>
-              ✅ <b>CLEAR</b> — {result.student?.name} is eligible for enrollment.
+               <b>CLEAR</b> — {result.student?.name} is eligible for enrollment.
             </div>
           )}
         </div>

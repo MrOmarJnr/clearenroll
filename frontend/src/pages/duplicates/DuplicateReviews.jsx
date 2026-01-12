@@ -64,7 +64,7 @@ export default function DuplicateReviews() {
       <h2>Duplicate Reviews</h2>
 
       {reviews.length === 0 && (
-        <p>No pending duplicate reviews 🎉</p>
+        <p>No pending duplicate reviews </p>
       )}
 
       {reviews.map((r) => (

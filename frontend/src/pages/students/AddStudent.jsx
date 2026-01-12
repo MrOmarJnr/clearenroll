@@ -66,7 +66,7 @@ export default function AddStudent() {
         }),
       });
 
-      navigate("/students/add");
+      navigate("/students/");
     } catch (err) {
       // 🔑 Proper duplicate handling
       if (err.data?.status === "POSSIBLE_DUPLICATE") {
@@ -159,6 +159,7 @@ export default function AddStudent() {
           <input
             className="input"
             type="date"
+            placeholder="Date of Birth"
             value={form.date_of_birth}
             onChange={onChange("date_of_birth")}
             required

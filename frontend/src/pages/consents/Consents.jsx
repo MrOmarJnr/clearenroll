@@ -55,7 +55,7 @@ export default function Consents() {
       {error && <p className="danger">{error}</p>}
 
       {!loading && consents.length === 0 && (
-        <p>No pending consent requests 🎉</p>
+        <p>No pending consent requests </p>
       )}
 
       {consents.map((c) => (

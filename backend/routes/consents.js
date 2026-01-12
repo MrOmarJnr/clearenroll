@@ -63,29 +63,37 @@ module.exports = (pool, auth) => {
    * POST /consents/:id/approve
    * Admin approves consent
    */
-  router.post("/:id/approve", auth, async (req, res) => {
-    const { id } = req.params;
+router.post("/:id/approve", auth, async (req, res) => {
+  const { id } = req.params;
 
-    try {
-      await pool.query(
-        `
-        UPDATE consents
-        SET status = 'APPROVED',
-            approved_by = ?,
-            approved_at = NOW()
-        WHERE id = ?
-        `,
-        [req.user.id, id]
-      );
+  try {
+    const [result] = await pool.query(
+      `
+      UPDATE consents
+      SET status = 'GRANTED',
+          approved_by = ?,
+          approved_at = NOW(),
+          updated_at = NOW()
+      WHERE id = ?
+      `,
+      [req.user.id, id]
+    );
 
-      console.log("✅ CONSENT APPROVED:", id);
-
-      res.json({ success: true });
-    } catch (err) {
-      console.error("❌ APPROVE CONSENT FAILED:", err);
-      res.status(500).json({ message: "Failed to approve consent" });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({
+        message: "Consent not found or already processed",
+      });
     }
-  });
+
+    console.log("✅ CONSENT GRANTED:", id);
+
+    res.json({ message: "Consent granted" });
+  } catch (err) {
+    console.error("APPROVE CONSENT ERROR:", err);
+    res.status(500).json({ message: "Failed to approve consent" });
+  }
+});
+
 
   /**
  * POST /consents/:id/reject

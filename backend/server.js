@@ -120,10 +120,17 @@ app.post("/auth/login", async (req, res) => {
     return res.status(401).json({ message: "Invalid credentials" });
   }
 
+
+  const [schoolRow] = await pool.query(
+  "SELECT school_id FROM users WHERE id = ?",
+  [user.id]
+);
+
   const token = signToken({
     userId: user.id,
     email: user.email,
     role: user.role,
+    school_id: schoolRow[0]?.school_id || null,
   });
 
   res.json({ token });
@@ -452,151 +459,6 @@ app.get("/dashboard", authMiddleware, async (req, res) => {
   }
 });
 
-// Dashboard  adminssions (UPDATED: pendingDuplicates badge count)
-// ======================
-app.get("/dashboard/admissions", authMiddleware, async (req, res) => {
-  try {
-    const [[schools]] = await pool.query("SELECT COUNT(*) AS total FROM schools");
-    const [[parents]] = await pool.query("SELECT COUNT(*) AS total FROM parents");
-    const [[students]] = await pool.query("SELECT COUNT(*) AS total FROM students");
-    const [[flagged]] = await pool.query(
-      "SELECT COUNT(*) AS total FROM flags WHERE status = 'FLAGGED'"
-    );
-
-    // ✅ NEW: pending duplicate reviews count
-    const [[pendingDuplicates]] = await pool.query(
-      "SELECT COUNT(*) AS total FROM duplicate_reviews WHERE decision IS NULL"
-    );
-
-    const [recentFlags] = await pool.query(`
-      SELECT 
-        f.id,
-        CONCAT(s.first_name,' ',s.last_name) AS student,
-        p.full_name AS parent,
-        sc.name AS reported_by,
-        f.amount_owed,
-        f.status
-      FROM flags f
-      JOIN students s ON s.id = f.student_id
-      LEFT JOIN parents p ON p.id = f.parent_id
-      JOIN schools sc ON sc.id = f.reported_by_school_id
-      ORDER BY f.created_at DESC
-      LIMIT 5
-    `);
-
-    res.json({
-      cards: {
-        schools: schools.total,
-        parents: parents.total,
-        students: students.total,
-        flagged: flagged.total,
-        // ✅ NEW
-        pendingDuplicates: pendingDuplicates.total,
-      },
-      recentFlags,
-    });
-  } catch (err) {
-    console.error("DASHBOARD ERROR:", err);
-    res.status(500).json({ message: "Failed to load dashboard" });
-  }
-});
-
-// Dashboard bursar (UPDATED: pendingDuplicates badge count)
-// ======================
-app.get("/dashboard/bursar", authMiddleware, async (req, res) => {
-  try {
-    const [[schools]] = await pool.query("SELECT COUNT(*) AS total FROM schools");
-    const [[parents]] = await pool.query("SELECT COUNT(*) AS total FROM parents");
-    const [[students]] = await pool.query("SELECT COUNT(*) AS total FROM students");
-    const [[flagged]] = await pool.query(
-      "SELECT COUNT(*) AS total FROM flags WHERE status = 'FLAGGED'"
-    );
-
-    // ✅ NEW: pending duplicate reviews count
-    const [[pendingDuplicates]] = await pool.query(
-      "SELECT COUNT(*) AS total FROM duplicate_reviews WHERE decision IS NULL"
-    );
-
-    const [recentFlags] = await pool.query(`
-      SELECT 
-        f.id,
-        CONCAT(s.first_name,' ',s.last_name) AS student,
-        p.full_name AS parent,
-        sc.name AS reported_by,
-        f.amount_owed,
-        f.status
-      FROM flags f
-      JOIN students s ON s.id = f.student_id
-      LEFT JOIN parents p ON p.id = f.parent_id
-      JOIN schools sc ON sc.id = f.reported_by_school_id
-      ORDER BY f.created_at DESC
-      LIMIT 5
-    `);
-
-    res.json({
-      cards: {
-        schools: schools.total,
-        parents: parents.total,
-        students: students.total,
-        flagged: flagged.total,
-        // ✅ NEW
-        pendingDuplicates: pendingDuplicates.total,
-      },
-      recentFlags,
-    });
-  } catch (err) {
-    console.error("DASHBOARD ERROR:", err);
-    res.status(500).json({ message: "Failed to load dashboard" });
-  }
-});
-
-
-app.get("/dashboard/school-admin", authMiddleware, async (req, res) => {
-  try {
-    const [[schools]] = await pool.query("SELECT COUNT(*) AS total FROM schools");
-    const [[parents]] = await pool.query("SELECT COUNT(*) AS total FROM parents");
-    const [[students]] = await pool.query("SELECT COUNT(*) AS total FROM students");
-    const [[flagged]] = await pool.query(
-      "SELECT COUNT(*) AS total FROM flags WHERE status = 'FLAGGED'"
-    );
-
-    // ✅ NEW: pending duplicate reviews count
-    const [[pendingDuplicates]] = await pool.query(
-      "SELECT COUNT(*) AS total FROM duplicate_reviews WHERE decision IS NULL"
-    );
-
-    const [recentFlags] = await pool.query(`
-      SELECT 
-        f.id,
-        CONCAT(s.first_name,' ',s.last_name) AS student,
-        p.full_name AS parent,
-        sc.name AS reported_by,
-        f.amount_owed,
-        f.status
-      FROM flags f
-      JOIN students s ON s.id = f.student_id
-      LEFT JOIN parents p ON p.id = f.parent_id
-      JOIN schools sc ON sc.id = f.reported_by_school_id
-      ORDER BY f.created_at DESC
-      LIMIT 5
-    `);
-
-    res.json({
-      cards: {
-        schools: schools.total,
-        parents: parents.total,
-        students: students.total,
-        flagged: flagged.total,
-        // ✅ NEW
-        pendingDuplicates: pendingDuplicates.total,
-      },
-      recentFlags,
-    });
-  } catch (err) {
-    console.error("DASHBOARD ERROR:", err);
-    res.status(500).json({ message: "Failed to load dashboard" });
-  }
-});
 
 // ======================
 // Flags (Option A response shape + clear endpoint)
@@ -626,37 +488,96 @@ app.get("/flags", authMiddleware, async (req, res) => {
   }
 });
 
+
 app.post("/flags", authMiddleware, async (req, res) => {
-  const { student_id, parent_id, reported_by_school_id, amount_owed, reason } =
-    req.body;
+  const {
+    student_id,
+    parent_id,
+    reported_by_school_id,
+    amount_owed,
+    reason,
+  } = req.body;
 
   if (!student_id) {
     return res.status(400).json({ message: "Student is required" });
   }
+
   if (!reported_by_school_id) {
     return res.status(400).json({ message: "Reported by school is required" });
   }
+
   if (amount_owed === undefined || amount_owed === null) {
     return res.status(400).json({ message: "Amount owed is required" });
   }
 
-  const [result] = await pool.query(
-    `
-    INSERT INTO flags
-    (student_id, parent_id, reported_by_school_id, amount_owed, reason, status)
-    VALUES (?, ?, ?, ?, ?, 'FLAGGED')
-    `,
-    [
-      student_id,
-      parent_id || null,
-      reported_by_school_id,
-      amount_owed,
-      reason || "Unpaid fees",
-    ]
-  );
+  const conn = await pool.getConnection();
 
-  res.status(201).json({ message: "Flag created", flag_id: result.insertId });
+  try {
+    await conn.beginTransaction();
+
+    // ======================
+    // 1. CREATE FLAG
+    // ======================
+    const [flagResult] = await conn.query(
+      `
+      INSERT INTO flags
+      (student_id, parent_id, reported_by_school_id, amount_owed, reason, status)
+      VALUES (?, ?, ?, ?, ?, 'FLAGGED')
+      `,
+      [
+        student_id,
+        parent_id || null,
+        reported_by_school_id,
+        amount_owed,
+        reason || "Unpaid fees",
+      ]
+    );
+
+    const flagId = flagResult.insertId;
+
+    // ======================
+    // 2. CREATE CONSENT (TEST MODE)
+    // ======================
+    await conn.query(
+      `
+      INSERT INTO consents
+      (
+        student_id,
+        requesting_school_id,
+        granting_party,
+        status,
+        scope,
+        created_at,
+        updated_at
+      )
+      VALUES (?, ?, ?, 'PENDING', 'CLEARANCE', NOW(), NOW())
+      `,
+      [
+        student_id,
+        reported_by_school_id,
+        "PARENT", // logical placeholder for now
+      ]
+    );
+
+    await conn.commit();
+
+    res.status(201).json({
+      message: "Flag created and consent requested",
+      flag_id: flagId,
+    });
+  } catch (err) {
+    await conn.rollback();
+    console.error("FLAG CREATE ERROR:", err);
+    res.status(500).json({ message: "Failed to create flag" });
+  } finally {
+    conn.release();
+  }
 });
+
+
+
+
+
 
 app.patch("/flags/:id/clear", authMiddleware, async (req, res) => {
   try {
@@ -750,19 +671,19 @@ app.post("/verify", authMiddleware, async (req, res) => {
 // Verify Student (Enrollment Check)
 // ✅ UPDATED: blocks if pending duplicate OR flagged fees
 // ======================
+// ======================
+// Verify Student (Enrollment Check)
+// ======================
 app.post("/verify/student", authMiddleware, async (req, res) => {
   try {
     const { student_id, first_name, last_name, date_of_birth } = req.body;
+    const requestingSchoolId = req.user.school_id; // ✅ REQUIRED
 
     let students = [];
 
     if (student_id) {
       const [rows] = await pool.query(
-        `
-        SELECT id, first_name, last_name, date_of_birth
-        FROM students
-        WHERE id = ?
-        `,
+        `SELECT id, first_name, last_name, date_of_birth FROM students WHERE id = ?`,
         [student_id]
       );
       students = rows;
@@ -801,7 +722,9 @@ app.post("/verify/student", authMiddleware, async (req, res) => {
 
     const student = students[0];
 
-    // ✅ NEW: Block if there is a pending duplicate review for this student
+    // ----------------------
+    // DUPLICATE CHECK
+    // ----------------------
     const [[dup]] = await pool.query(
       `
       SELECT COUNT(*) AS total
@@ -825,54 +748,68 @@ app.post("/verify/student", authMiddleware, async (req, res) => {
       });
     }
 
-// ----------------------
-// DISPUTE CHECK (BLOCK)
-// ----------------------
-const [disputes] = await pool.query(
-  `
-  SELECT id
-  FROM disputes
-  WHERE student_id = ?
-    AND status IN ('OPEN','UNDER_REVIEW')
-  LIMIT 1
-  `,
-  [student.id]
-);
+    // ----------------------
+    // DISPUTE CHECK
+    // ----------------------
+    const [disputes] = await pool.query(
+      `
+      SELECT id
+      FROM disputes
+      WHERE student_id = ?
+        AND status IN ('OPEN','UNDER_REVIEW')
+      LIMIT 1
+      `,
+      [student.id]
+    );
 
-if (disputes.length) {
-  return res.json({
-    status: "DISPUTED",
-    blocked: true,
-    message: "Enrollment blocked: dispute in progress.",
-    student: {
-      id: student.id,
-      name: `${student.first_name} ${student.last_name}`,
-    },
-  });
-}
+    if (disputes.length) {
+      return res.json({
+        status: "DISPUTED",
+        blocked: true,
+        message: "Enrollment blocked: dispute in progress.",
+        student: {
+          id: student.id,
+          name: `${student.first_name} ${student.last_name}`,
+        },
+      });
+    }
 
+    // ----------------------
+    // ✅ CONSENT CHECK (FIXED)
+  // ----------------------
+// ✅ CONSENT CHECK (FIXED)
 // ----------------------
-// CONSENT CHECK
+// ✅ CONSENT CHECK (MVP RULE)
 // ----------------------
 const [consents] = await pool.query(
   `
   SELECT id
   FROM consents
   WHERE student_id = ?
-    AND status = 'APPROVED'
+    AND status = 'GRANTED'
   LIMIT 1
   `,
   [student.id]
 );
 
-const consent_status = consents.length ? "APPROVED" : "REQUIRED";
+let consent_status = consents.length ? "APPROVED" : "REQUIRED";
 
+// 🔁 AUTO-CREATE CONSENT IF NONE EXISTS (still keep this)
+if (!consents.length) {
+  await pool.query(
+    `
+    INSERT INTO consents
+      (student_id, requesting_school_id, granting_party, status, scope, created_at, updated_at)
+    VALUES
+      (?, ?, 'PARENT', 'PENDING', 'BALANCE_SUMMARY', NOW(), NOW())
+    `,
+    [student.id, requestingSchoolId]
+  );
+}
 
-
-
-
-
-    // Existing: Block if student is flagged
+    // ----------------------
+    // FLAG CHECK
+    // ----------------------
     const [flags] = await pool.query(
       `
       SELECT id, amount_owed, reason
@@ -886,30 +823,32 @@ const consent_status = consents.length ? "APPROVED" : "REQUIRED";
     );
 
     if (flags.length) {
-  return res.json({
-    status: "FLAGGED",
-    blocked: true,
-    consent_status,
-    message: "Enrollment blocked: outstanding fees must be cleared.",
-    amount_owed:
-      consent_status === "APPROVED" ? flags[0].amount_owed : null,
-    student: {
-      id: student.id,
-      name: `${student.first_name} ${student.last_name}`,
-    },
-  });
-}
+      return res.json({
+        status: "FLAGGED",
+        blocked: true,
+        consent_status,
+        message: "Enrollment blocked: outstanding fees must be cleared.",
+        amount_owed:
+          consent_status === "APPROVED" ? flags[0].amount_owed : null,
+        student: {
+          id: student.id,
+          name: `${student.first_name} ${student.last_name}`,
+        },
+      });
+    }
 
-
-  res.json({
-  status: "CLEAR",
-  blocked: false,
-  consent_status,
-  student: {
-    id: student.id,
-    name: `${student.first_name} ${student.last_name}`,
-  },
-});
+    // ----------------------
+    // CLEAR
+    // ----------------------
+    res.json({
+      status: "CLEAR",
+      blocked: false,
+      consent_status,
+      student: {
+        id: student.id,
+        name: `${student.first_name} ${student.last_name}`,
+      },
+    });
   } catch (err) {
     console.error("VERIFY STUDENT ERROR:", err);
     res.status(500).json({ message: "Student verification failed" });

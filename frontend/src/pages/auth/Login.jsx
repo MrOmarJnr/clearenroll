@@ -17,6 +17,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false); // ✅ NEW
   const [error, setError] = useState("");
 
+    const API_URL = import.meta.env.VITE_API_URL;
   // ✅ FIX 1: floating labels stay up
   useEffect(() => {
     const inputs = document.querySelectorAll(".input100");
@@ -35,7 +36,7 @@ export default function Login() {
     setError("");
 
     try {
-      const res = await fetch("/api/auth/login", {
+        const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

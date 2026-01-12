@@ -8,7 +8,7 @@ export default function DashboardLayout() {
 
   const token = localStorage.getItem("token");
 
-  const getRoleSafe = () => {
+  const getUserSafe = () => {
     try {
       if (!token) return null;
       const payload = jwtDecode(token);
@@ -18,32 +18,27 @@ export default function DashboardLayout() {
         return null;
       }
 
-      return payload?.role || null;
+      return payload; // ✅ return full user payload
     } catch {
       localStorage.removeItem("token");
       return null;
     }
   };
 
-  const role = getRoleSafe();
+  const user = getUserSafe();
+  const role = user?.role;
 
-  // ✅ UPDATED: include CREATE / ADD routes
   const ROLE_ALLOW = {
     SUPER_ADMIN: [
       "/dashboard",
-
       "/verify",
       "/verify/enrollment",
-
       "/parents",
       "/parents/add",
-
       "/students",
       "/students/add",
-
       "/flags",
       "/flags/create",
-
       "/schools",
       "/duplicates",
       "/consents",
@@ -51,16 +46,12 @@ export default function DashboardLayout() {
 
     SCHOOL_ADMIN: [
       "/dashboard",
-
       "/verify",
       "/verify/enrollment",
-
       "/parents",
       "/parents/add",
-
       "/students",
       "/students/add",
-
       "/flags",
       "/flags/create",
     ],
@@ -92,7 +83,6 @@ export default function DashboardLayout() {
   const allowedPaths = role ? (ROLE_ALLOW[role] || ["/dashboard"]) : ["/dashboard"];
   const isAllowed = (path) => allowedPaths.includes(path);
 
-  // Block unauthorized deep links
   if (role && location?.pathname && !isAllowed(location.pathname)) {
     if (location.pathname !== "/dashboard") {
       navigate("/dashboard", { replace: true });
@@ -111,7 +101,13 @@ export default function DashboardLayout() {
           <div className="brand-icon"></div>
           <div className="brand-text">
             <div className="brand-title">Clear Enroll System</div>
-            <div className="brand-sub">Platform Admin</div>
+
+            {/* ✅ LOGGED-IN USER DISPLAY */}
+            {user && (
+              <div className="brand-sub">
+                Logged in as <strong>{user.email}</strong> ({user.role})
+              </div>
+            )}
           </div>
         </div>
 

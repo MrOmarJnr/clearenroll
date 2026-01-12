@@ -35,7 +35,8 @@ export default function Students() {
       <table className="table">
         <thead>
           <tr>
-            <th>Name</th>
+            <th>Name</th> 
+            <th>Student ID</th>
             <th>DOB</th>
             <th>Gender</th>
             <th>School</th>
@@ -46,6 +47,7 @@ export default function Students() {
           {students.map((s) => (
             <tr key={s.id}>
               <td>{s.name}</td>
+              <td>{s.id}</td>
               <td>{String(s.date_of_birth).slice(0, 10)}</td>
               <td>{s.gender}</td>
               <td>{s.school}</td>
