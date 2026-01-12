@@ -108,9 +108,9 @@ export default function DashboardLayout() {
     <div className="app-shell">
       <header className="topbar">
         <div className="brand">
-          <div className="brand-icon">📦</div>
+          <div className="brand-icon"></div>
           <div className="brand-text">
-            <div className="brand-title">Fees Defaulters Registry</div>
+            <div className="brand-title">Clear Enroll System</div>
             <div className="brand-sub">Platform Admin</div>
           </div>
         </div>
