@@ -225,6 +225,7 @@ export default function AddStudent() {
           >
             Cancel
           </button>
+      
         </div>
       </form>
     </div>

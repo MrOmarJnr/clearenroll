@@ -7,6 +7,12 @@ const bcrypt = require("bcryptjs");
 const mysql = require("mysql2/promise");
 const { z } = require("zod");
 
+
+const multer = require("multer");
+const XLSX = require("xlsx");
+
+const upload = multer({ dest: "uploads/" });
+
 const app = express();
 app.use(express.json());
 const auth = require("./middleware/auth"); // keeping as-is (not used below)
@@ -266,8 +272,15 @@ app.get("/students", authMiddleware, async (req, res) => {
       CONCAT(s.first_name,' ',s.last_name) AS name,
       s.date_of_birth,
       s.gender,
+
+      -- ✅ IDs (FOR LOGIC)
+      s.current_school_id AS school_id,
+      sp.parent_id,
+
+      -- ✅ Names (FOR DISPLAY)
       sch.name AS school,
       p.full_name AS parent
+
     FROM students s
     JOIN schools sch ON sch.id = s.current_school_id
     JOIN student_parents sp ON sp.student_id = s.id
@@ -441,18 +454,50 @@ app.get("/dashboard", authMiddleware, async (req, res) => {
       ORDER BY f.created_at DESC
       LIMIT 5
     `);
+    // ✅ MY FLAG ACTIVITY (CREATED OR CLEARED BY ME)
+    const [myFlagActivity] = await pool.query(
+      `
+      SELECT
+        CONCAT(s.first_name,' ',s.last_name) AS student,
+        p.full_name AS parent,
+        sc.name AS school,
+        f.amount_owed,
+        f.status,
+        CASE
+          WHEN f.created_by_user_id = ? THEN 'CREATED'
+          WHEN f.cleared_by_user_id = ? THEN 'CLEARED'
+        END AS my_action
+      FROM flags f
+      JOIN students s ON s.id = f.student_id
+      LEFT JOIN parents p ON p.id = f.parent_id
+      JOIN schools sc ON sc.id = f.reported_by_school_id
+      WHERE f.created_by_user_id = ?
+         OR f.cleared_by_user_id = ?
+      ORDER BY f.updated_at DESC
+      `,
+      [
+        req.user.userId,
+        req.user.userId,
+        req.user.userId,
+        req.user.userId,
+      ]
+    );
 
-    res.json({
-      cards: {
-        schools: schools.total,
-        parents: parents.total,
-        students: students.total,
-        flagged: flagged.total,
-        // ✅ NEW
-        pendingDuplicates: pendingDuplicates.total,
-      },
-      recentFlags,
-    });
+
+  res.json({
+  cards: {
+    schools: schools.total,
+    parents: parents.total,
+    students: students.total,
+    flagged: flagged.total,
+    pendingDuplicates: pendingDuplicates.total,
+  },
+  recentFlags,
+  myFlagActivity, // ✅ THIS WAS MISSING
+});
+
+
+
   } catch (err) {
     console.error("DASHBOARD ERROR:", err);
     res.status(500).json({ message: "Failed to load dashboard" });
@@ -511,6 +556,7 @@ app.post("/flags", authMiddleware, async (req, res) => {
   }
 
   const conn = await pool.getConnection();
+console.log("AUTH USER:", req.user);
 
   try {
     await conn.beginTransaction();
@@ -521,8 +567,8 @@ app.post("/flags", authMiddleware, async (req, res) => {
     const [flagResult] = await conn.query(
       `
       INSERT INTO flags
-      (student_id, parent_id, reported_by_school_id, amount_owed, reason, status)
-      VALUES (?, ?, ?, ?, ?, 'FLAGGED')
+      (student_id, parent_id, reported_by_school_id, amount_owed, reason, status,created_by_user_id)
+      VALUES (?, ?, ?, ?, ?, 'FLAGGED',?)
       `,
       [
         student_id,
@@ -530,36 +576,13 @@ app.post("/flags", authMiddleware, async (req, res) => {
         reported_by_school_id,
         amount_owed,
         reason || "Unpaid fees",
+        req.user.userId
       ]
     );
-
+console.log(flagResult);
     const flagId = flagResult.insertId;
 
-    // ======================
-    // 2. CREATE CONSENT (TEST MODE)
-    // ======================
-    await conn.query(
-      `
-      INSERT INTO consents
-      (
-        student_id,
-        requesting_school_id,
-        granting_party,
-        status,
-        scope,
-        created_at,
-        updated_at
-      )
-      VALUES (?, ?, ?, 'PENDING', 'CLEARANCE', NOW(), NOW())
-      `,
-      [
-        student_id,
-        reported_by_school_id,
-        "PARENT", // logical placeholder for now
-      ]
-    );
-
-    await conn.commit();
+   
 
     res.status(201).json({
       message: "Flag created and consent requested",
@@ -625,15 +648,25 @@ app.post("/verify", authMiddleware, async (req, res) => {
     [query, query, `%${query}%`]
   );
 
-  const [students] = await pool.query(
-    `
-    SELECT s.id, CONCAT(s.first_name,' ',s.last_name) AS name, sc.name AS school
-    FROM students s
-    JOIN schools sc ON sc.id = s.current_school_id
-    WHERE CONCAT(s.first_name,' ',s.last_name) LIKE ?
-    `,
-    [`%${query}%`]
-  );
+const [students] = await pool.query(
+  `
+  SELECT DISTINCT
+    s.id,
+    CONCAT(s.first_name,' ',s.last_name) AS name,
+    sc.name AS school
+  FROM students s
+  JOIN schools sc ON sc.id = s.current_school_id
+  JOIN student_parents sp ON sp.student_id = s.id
+  JOIN parents p ON p.id = sp.parent_id
+  WHERE
+    p.phone = ?
+    OR p.ghana_card_number = ?
+    OR p.full_name LIKE ?
+    OR CONCAT(s.first_name,' ',s.last_name) LIKE ?
+  `,
+  [query, query, `%${query}%`, `%${query}%`]
+);
+
 
   const [flags] = await pool.query(
     `
@@ -774,12 +807,7 @@ app.post("/verify/student", authMiddleware, async (req, res) => {
       });
     }
 
-    // ----------------------
-    // ✅ CONSENT CHECK (FIXED)
-  // ----------------------
-// ✅ CONSENT CHECK (FIXED)
-// ----------------------
-// ✅ CONSENT CHECK (MVP RULE)
+ 
 // ----------------------
 const [consents] = await pool.query(
   `
@@ -875,6 +903,245 @@ app.use("/consents", consentsRoutes(pool, authMiddleware));
 
 const disputesRoutes  = require("./routes/disputes");
 app.use("/disputes", disputesRoutes(pool, authMiddleware));
+
+// ======================
+// parent import
+// ======================
+
+app.post("/import/parents", authMiddleware, upload.single("file"), async (req, res) => {
+  const workbook = XLSX.readFile(req.file.path);
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(sheet);
+
+  let inserted = 0;
+  let skipped = 0;
+
+  for (const r of rows) {
+    if (!r.full_name || !r.phone) {
+      skipped++;
+      continue;
+    }
+
+    const [exists] = await pool.query(
+      "SELECT id FROM parents WHERE ghana_card_number = ?",
+      [r.ghana_card_number]
+    );
+
+    if (exists.length) {
+      skipped++;
+      continue;
+    }
+
+    await pool.query(
+      `
+      INSERT INTO parents (full_name, phone, ghana_card_number, address)
+      VALUES (?, ?, ?, ?)
+      `,
+      [r.full_name, r.phone, r.ghana_card_number || null, r.address || null]
+    );
+
+    inserted++;
+  }
+
+  res.json({ inserted, skipped });
+});
+
+
+// ======================
+// student import
+// ======================
+
+
+app.post(
+  "/import/students",
+  authMiddleware,
+  upload.single("file"),
+  async (req, res) => {
+    const workbook = XLSX.readFile(req.file.path);
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+    let inserted = 0;
+    let skipped = 0;
+
+    // ✅ NEW: row-by-row error feedback
+    const rowErrors = [];
+
+    // helper: normalize strings (remove spaces, lower-case)
+    const norm = (v) =>
+      String(v || "")
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, "");
+
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+
+      // Your template headers (do not change)
+      const first_name = String(r.first_name || "").trim();
+      const last_name = String(r.last_name || "").trim();
+      const date_of_birth = r.date_of_birth ? String(r.date_of_birth).slice(0, 10) : "";
+      const gender = String(r.gender || "").trim();
+      const schoolName = String(r.school || "").trim(); // ✅ header is "school"
+      const parentName = String(r.parent || "").trim(); // ✅ header is "parent"
+
+      // basic required validation
+      if (!first_name || !last_name || !date_of_birth || !gender || !schoolName || !parentName) {
+        skipped++;
+        rowErrors.push({
+          row: i + 2, // excel row number (assuming row 1 is headers)
+          error: "Missing required fields (first_name, last_name, date_of_birth, gender, school, parent)",
+        });
+        continue;
+      }
+
+      if (gender !== "Male" && gender !== "Female") {
+        skipped++;
+        rowErrors.push({
+          row: i + 2,
+          error: "Invalid gender (must be Male or Female)",
+          value: gender,
+        });
+        continue;
+      }
+
+      // ✅ School lookup (exact match first)
+      let school = null;
+      {
+        const [[s1]] = await pool.query(
+          "SELECT id, name FROM schools WHERE name = ? LIMIT 1",
+          [schoolName]
+        );
+
+        if (s1) school = s1;
+
+        // fallback: match ignoring spaces/case (helps if Excel has GreenwoodHighSchool vs Greenwood High School)
+        if (!school) {
+          const [[s2]] = await pool.query(
+            "SELECT id, name FROM schools WHERE LOWER(REPLACE(name,' ','')) = ? LIMIT 1",
+            [norm(schoolName)]
+          );
+          if (s2) school = s2;
+        }
+      }
+
+      if (!school) {
+        skipped++;
+        rowErrors.push({
+          row: i + 2,
+          error: "School not found in database (school must match schools.name)",
+          value: schoolName,
+        });
+        continue;
+      }
+
+      // ✅ Parent lookup (exact match first)
+      let parent = null;
+      {
+        const [[p1]] = await pool.query(
+          "SELECT id, full_name FROM parents WHERE full_name = ? LIMIT 1",
+          [parentName]
+        );
+
+        if (p1) parent = p1;
+
+        // fallback: match ignoring spaces/case (KwameMensah vs Kwame Mensah)
+        if (!parent) {
+          const [[p2]] = await pool.query(
+            "SELECT id, full_name FROM parents WHERE LOWER(REPLACE(full_name,' ','')) = ? LIMIT 1",
+            [norm(parentName)]
+          );
+          if (p2) parent = p2;
+        }
+      }
+
+      if (!parent) {
+        skipped++;
+        rowErrors.push({
+          row: i + 2,
+          error: "Parent not found in database (parent must match parents.full_name)",
+          value: parentName,
+        });
+        continue;
+      }
+
+      // Duplicate check (same logic style as your /students route)
+      const [dup] = await pool.query(
+        `
+        SELECT id FROM students
+        WHERE LOWER(first_name) = LOWER(?)
+          AND LOWER(last_name) = LOWER(?)
+          AND date_of_birth = ?
+        LIMIT 1
+        `,
+        [first_name, last_name, date_of_birth]
+      );
+
+      if (dup.length) {
+        skipped++;
+        rowErrors.push({
+          row: i + 2,
+          error: "Duplicate student (same first_name + last_name + date_of_birth already exists)",
+        });
+        continue;
+      }
+
+      // ✅ Insert student + link parent (keep it consistent with your existing create logic)
+      const conn = await pool.getConnection();
+      try {
+        await conn.beginTransaction();
+
+        const [studentResult] = await conn.query(
+          `
+          INSERT INTO students
+          (first_name, last_name, date_of_birth, gender, current_school_id)
+          VALUES (?, ?, ?, ?, ?)
+          `,
+          [first_name, last_name, date_of_birth, gender, school.id]
+        );
+
+        const studentId = studentResult.insertId;
+
+        await conn.query(
+          `
+          INSERT INTO student_parents
+          (student_id, parent_id, relationship)
+          VALUES (?, ?, 'Guardian')
+          `,
+          [studentId, parent.id]
+        );
+
+        const systemStudentId = `STD-${studentId}`;
+
+        await conn.query(
+          `
+          INSERT INTO student_identifiers
+          (student_id, identifier_type, identifier_value, is_primary)
+          VALUES (?, 'SYSTEM_STUDENT_ID', ?, true)
+          `,
+          [studentId, systemStudentId]
+        );
+
+        await conn.commit();
+        inserted++;
+      } catch (err) {
+        await conn.rollback();
+        skipped++;
+        rowErrors.push({
+          row: i + 2,
+          error: "Insert failed",
+          details: err.message,
+        });
+      } finally {
+        conn.release();
+      }
+    }
+
+    res.json({ inserted, skipped, rowErrors });
+  }
+);
+
+
 
 // ======================
 // Start server

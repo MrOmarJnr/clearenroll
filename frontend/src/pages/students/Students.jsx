@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { api } from "../../services/api";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 export default function Students() {
   const [students, setStudents] = useState([]);
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const load = async () => {
     setError("");
@@ -24,10 +26,12 @@ export default function Students() {
     <div className="card">
       <h2>Students</h2>
 
+
       <div className="row-actions">
         <Link className="link" to="/students/add">
           Add Student
         </Link>
+      
       </div>
 
       {error && <div className="danger">{error}</div>}

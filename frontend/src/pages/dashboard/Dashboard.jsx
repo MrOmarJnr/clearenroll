@@ -5,88 +5,225 @@ import { Link } from "react-router-dom";
 export default function Dashboard() {
   const [cards, setCards] = useState(null);
   const [recentFlags, setRecentFlags] = useState([]);
+  const [myFlagActivity, setMyFlagActivity] = useState([]);
+
+  const PAGE_SIZE = 5;
+  const [recentPage, setRecentPage] = useState(1);
+  const [myPage, setMyPage] = useState(1);
 
   useEffect(() => {
     (async () => {
       const data = await api("/dashboard");
       setCards(data.cards);
       setRecentFlags(data.recentFlags || []);
+      setMyFlagActivity(data.myFlagActivity || []);
     })();
   }, []);
+
+  const recentStart = (recentPage - 1) * PAGE_SIZE;
+  const recentEnd = recentStart + PAGE_SIZE;
+  const pagedRecentFlags = recentFlags.slice(recentStart, recentEnd);
+
+  const myStart = (myPage - 1) * PAGE_SIZE;
+  const myEnd = myStart + PAGE_SIZE;
+  const pagedMyActivity = myFlagActivity.slice(myStart, myEnd);
+
+  const exportMyActivityCSV = () => {
+    if (!myFlagActivity.length) return;
+
+    const headers = ["Student", "Parent", "School", "Amount", "Status", "My Action"];
+    const rows = myFlagActivity.map((f) => [
+      f.student,
+      f.parent,
+      f.school,
+      f.amount_owed,
+      f.status,
+      f.my_action,
+    ]);
+
+    const csv =
+      [headers, ...rows]
+        .map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
+        .join("\n");
+
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "my_flag_activity.csv";
+    a.click();
+
+    URL.revokeObjectURL(url);
+  };
+
+  const badgeClass = (status) => {
+    if (status === "FLAGGED") return "badge badge-danger";
+    if (status === "CLEARED") return "badge badge-success";
+    return "badge";
+  };
 
   if (!cards) return <div className="card">Loading...</div>;
 
   return (
     <>
-      <div className="card">
-        <h2>Dashboard</h2>
-        <div className="row-actions">
-          <Link className="link" to="/flags/create">Create Flag</Link>
-          <Link className="link" to="/verify">Verify Parent/Student</Link>
-          {/* ✅ NEW: Quick link to duplicates */}
-          <Link className="link" to="/duplicates">Duplicate Reviews</Link>
+      <div className="page-head">
+        <div>
+          <h2 className="page-title">Dashboard</h2>
+          <div className="page-subtitle">System overview & activity snapshot</div>
         </div>
       </div>
 
       <div className="grid4">
-        <div className="card">
+        <div className="card stat-card">
           <div className="stat-title">Schools</div>
           <div className="stat-value">{cards.schools}</div>
         </div>
 
-        <div className="card">
+        <div className="card stat-card">
           <div className="stat-title">Parents</div>
           <div className="stat-value">{cards.parents}</div>
         </div>
 
-        <div className="card">
+        <div className="card stat-card">
           <div className="stat-title">Students</div>
           <div className="stat-value">{cards.students}</div>
         </div>
 
-        <div className="card">
+        <div className="card stat-card">
           <div className="stat-title">Flagged</div>
           <div className="stat-value danger">{cards.flagged}</div>
         </div>
       </div>
 
-      {/* ✅ NEW: Pending Duplicates badge/card (clickable) */}
       <div className="grid4" style={{ marginTop: 12 }}>
-        <Link to="/duplicates" className="card" style={{ textDecoration: "none" }}>
+        <Link to="/duplicates" className="card stat-card clickable" style={{ textDecoration: "none" }}>
           <div className="stat-title">Pending Duplicates</div>
           <div className={"stat-value " + (Number(cards.pendingDuplicates) > 0 ? "danger" : "")}>
             {cards.pendingDuplicates ?? 0}
           </div>
+          <div className="hint">Review potential duplicates</div>
         </Link>
       </div>
 
       <div className="card">
-        <h3>Recent Flags</h3>
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Student</th>
-              <th>Parent</th>
-              <th>Reported By</th>
-              <th>Amount</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {recentFlags.map((f, i) => (
-              <tr key={i}>
-                <td>{f.student}</td>
-                <td>{f.parent}</td>
-                <td>{f.reported_by}</td>
-                <td>{f.amount_owed}</td>
-                <td className={f.status === "FLAGGED" ? "danger" : ""}>{f.status}</td>
+        <div className="card-head">
+          <h3 className="card-title">Recent Flags</h3>
+          <div className="card-actions">
+            <Link className="link-soft" to="/flags">View all</Link>
+          </div>
+        </div>
+
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Parent</th>
+                <th>Reported By</th>
+                <th className="td-right">Amount</th>
+                <th>Status</th>
               </tr>
-            ))}
-            {!recentFlags.length && (
-              <tr><td colSpan="5">No flags yet.</td></tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {pagedRecentFlags.map((f, i) => (
+                <tr key={i}>
+                  <td>{f.student}</td>
+                  <td>{f.parent}</td>
+                  <td>{f.reported_by}</td>
+                  <td className="td-right">{f.amount_owed}</td>
+                  <td>
+                    <span className={badgeClass(f.status)}>{f.status}</span>
+                  </td>
+                </tr>
+              ))}
+
+              {!recentFlags.length && (
+                <tr>
+                  <td colSpan="5">No flags yet.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Pagination should be subtle (NOT primary blue) */}
+        <div className="row-actions">
+          <button className="btn btn-ghost" disabled={recentPage === 1} onClick={() => setRecentPage(recentPage - 1)}>
+            Prev
+          </button>
+          <span className="muted">Page {recentPage}</span>
+          <button
+            className="btn btn-ghost"
+            disabled={recentEnd >= recentFlags.length}
+            onClick={() => setRecentPage(recentPage + 1)}
+          >
+            Next
+          </button>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="card-head">
+          <h3 className="card-title">My Flag Activity</h3>
+          <div className="card-actions">
+            {/* Export should be secondary/outline, not primary */}
+            <button className="btn btn-outline" onClick={exportMyActivityCSV}>
+              Export CSV
+            </button>
+          </div>
+        </div>
+
+        <div className="table-wrap">
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Student</th>
+                <th>Parent</th>
+                <th>School</th>
+                <th className="td-right">Amount</th>
+                <th>Status</th>
+                <th>My Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {pagedMyActivity.map((f, i) => (
+                <tr key={i}>
+                  <td>{f.student}</td>
+                  <td>{f.parent}</td>
+                  <td>{f.school}</td>
+                  <td className="td-right">{f.amount_owed}</td>
+                  <td>
+                    <span className={badgeClass(f.status)}>{f.status}</span>
+                  </td>
+                  <td>
+                    <span className="pill">{f.my_action}</span>
+                  </td>
+                </tr>
+              ))}
+
+              {!myFlagActivity.length && (
+                <tr>
+                  <td colSpan="6">No activity recorded.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="row-actions">
+          <button className="btn btn-ghost" disabled={myPage === 1} onClick={() => setMyPage(myPage - 1)}>
+            Prev
+          </button>
+          <span className="muted">Page {myPage}</span>
+          <button
+            className="btn btn-ghost"
+            disabled={myEnd >= myFlagActivity.length}
+            onClick={() => setMyPage(myPage + 1)}
+          >
+            Next
+          </button>
+        </div>
       </div>
     </>
   );

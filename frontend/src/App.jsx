@@ -8,6 +8,7 @@ import DashboardLayout from "./layouts/DashboardLayout";
 
 /* ================= AUTH PAGES ================= */
 import Login from "./pages/auth/Login";
+import Register from "./pages/auth/Register";
 
 /* ================= CORE ================= */
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -19,9 +20,11 @@ import VerifyEnrollment from "./pages/verify/VerifyEnrollment";
 /* ================= DATA ================= */
 import Parents from "./pages/parents/Parents";
 import AddParent from "./pages/parents/AddParent";
+import ParentsImport from "./pages/parents/ParentsImport";
 
 import Students from "./pages/students/Students";
 import AddStudent from "./pages/students/AddStudent";
+import StudentsImport from "./pages/students/StudentsImport"; 
 
 import Flags from "./pages/flags/Flags";
 import CreateFlag from "./pages/flags/CreateFlag";
@@ -38,7 +41,7 @@ export default function App() {
 
         {/* ================= PUBLIC ================= */}
         <Route path="/login" element={<Login />} />
-
+        <Route path="/register" element={<Register />} />
         {/* ================= PROTECTED ================= */}
         <Route
           element={
@@ -58,10 +61,12 @@ export default function App() {
           {/* Parents */}
           <Route path="/parents" element={<Parents />} />
           <Route path="/parents/add" element={<AddParent />} />
+          <Route path="/parents/import" element={<ParentsImport />} />
 
           {/* Students */}
           <Route path="/students" element={<Students />} />
           <Route path="/students/add" element={<AddStudent />} />
+           <Route path="/students/import" element={<StudentsImport />} />
 
           {/* Flags */}
           <Route path="/flags" element={<Flags />} />

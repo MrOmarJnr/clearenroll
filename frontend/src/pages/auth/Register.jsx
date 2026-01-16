@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
-import "../assets/css/util.css";
-import "../assets/css/main.css";
+import "../../assets/css/util.css";
+import "../../assets/css/main.css";
 
 export default function Register() {
   // State

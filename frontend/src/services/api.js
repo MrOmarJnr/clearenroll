@@ -3,10 +3,14 @@ const API_URL = import.meta.env.VITE_API_URL || "/api";
 export async function api(path, options = {}) {
   const token = localStorage.getItem("token");
 
+  // ✅ NEW: detect FormData
+  const isFormData = options.body instanceof FormData;
+
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      "Content-Type": "application/json",
+      // ❌ do NOT set content-type for FormData
+      ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(options.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
@@ -27,13 +31,13 @@ export async function api(path, options = {}) {
     return;
   }
 
-  // Handle errors (INCLUDING duplicates)
+  // Handle errors
   if (!res.ok) {
     const err = new Error(
       data?.message || data?.error || "Request failed"
     );
     err.status = res.status;
-    err.data = data; // 🔑 REQUIRED for duplicate UI
+    err.data = data;
     throw err;
   }
 

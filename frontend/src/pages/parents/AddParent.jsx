@@ -31,6 +31,7 @@ export default function AddParent() {
   return (
     <div className="card">
       <h2>Add Parent</h2>
+    
       {error && <div className="danger">{error}</div>}
 
       <form onSubmit={submit}>
@@ -50,6 +51,10 @@ export default function AddParent() {
         <div className="form-actions">
           <button className="btn" type="submit">Save</button>
           <button className="btn" type="button" onClick={() => navigate("/parents")}>Cancel</button>
+                <button className="btn" onClick={() => navigate("/parents/import")}>
+  Bulk Import Parents
+</button>
+      
         </div>
       </form>
     </div>

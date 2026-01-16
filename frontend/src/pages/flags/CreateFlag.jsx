@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 
 export default function CreateFlag() {
   const navigate = useNavigate();
+
   const [schools, setSchools] = useState([]);
   const [parents, setParents] = useState([]);
   const [students, setStudents] = useState([]);
@@ -17,21 +18,54 @@ export default function CreateFlag() {
     reason: "",
   });
 
-  useEffect(() => {
-    (async () => {
-      const sch = await api("/schools");
-      setSchools(sch.schools || []);
+  // ======================
+  // LOAD DATA
+  // ======================
+useEffect(() => {
+  (async () => {
+    const sch = await api("/schools");
+    setSchools(sch.schools || []);
 
-      const par = await api("/parents");
-      setParents(par.parents || []);
+    const par = await api("/parents");
+    setParents(par.parents || []);
 
-      const std = await api("/students");
-      setStudents(std.students || []);
-    })();
-  }, []);
+    const std = await api("/students");
+    console.log("STUDENTS API RESPONSE:", std); // 👈 ADD THIS
+    setStudents(std.students || []);
+  })();
+}, []);
 
-  const onChange = (k) => (e) => setForm({ ...form, [k]: e.target.value });
+  const onChange = (k) => (e) =>
+    setForm({ ...form, [k]: e.target.value });
 
+  // ======================
+  // AUTO POPULATE PARENT + SCHOOL
+  // ======================
+ const onStudentChange = (e) => {
+  const studentId = e.target.value;
+
+  console.log("SELECTED STUDENT ID:", studentId);
+
+  const selectedStudent = students.find(
+    (s) => String(s.id) === String(studentId)
+  );
+
+  console.log("MATCHED STUDENT OBJECT:", selectedStudent);
+
+  if (!selectedStudent) return;
+
+  setForm({
+    ...form,
+    student_id: studentId,
+    parent_id: selectedStudent.parent_id || "",
+    reported_by_school_id:
+      selectedStudent.school_id || selectedStudent.current_school_id || "",
+  });
+};
+
+  // ======================
+  // SUBMIT
+  // ======================
   const submit = async (e) => {
     e.preventDefault();
     setError("");
@@ -40,7 +74,7 @@ export default function CreateFlag() {
       await api("/flags", {
         method: "POST",
         body: JSON.stringify({
-          student_id: form.student_id ? Number(form.student_id) : null,
+          student_id: Number(form.student_id),
           parent_id: form.parent_id ? Number(form.parent_id) : null,
           reported_by_school_id: Number(form.reported_by_school_id),
           amount_owed: Number(form.amount_owed),
@@ -57,14 +91,19 @@ export default function CreateFlag() {
   return (
     <div className="card">
       <h2>Create Flag</h2>
+
       {error && <div className="danger">{error}</div>}
 
       <form onSubmit={submit}>
+        {/* STUDENT */}
         <div className="form-row">
-          <select className="select" value={form.student_id} onChange={onChange("student_id")} required>
-            <option value="" disabled>
-              Select Student
-            </option>
+          <select
+            className="select"
+            value={form.student_id}
+            onChange={onStudentChange}
+            required
+          >
+            <option value="">Select Student</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name} ({String(s.date_of_birth).slice(0, 10)})
@@ -73,17 +112,23 @@ export default function CreateFlag() {
           </select>
         </div>
 
+        {/* PARENT (AUTO POPULATED) */}
         <div className="form-row">
-          <select className="select" value={form.parent_id} onChange={onChange("parent_id")}>
+          <select
+            className="select"
+            value={form.parent_id}
+            onChange={onChange("parent_id")}
+          >
             <option value="">Select Parent (optional)</option>
             {parents.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.full_name} ({p.phone})
+                {p.full_name}
               </option>
             ))}
           </select>
         </div>
 
+        {/* SCHOOL (AUTO POPULATED) */}
         <div className="form-row">
           <select
             className="select"
@@ -91,9 +136,7 @@ export default function CreateFlag() {
             onChange={onChange("reported_by_school_id")}
             required
           >
-            <option value="" disabled>
-              Select Reported By School
-            </option>
+            <option value="">Select Reported By School</option>
             {schools.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -102,6 +145,7 @@ export default function CreateFlag() {
           </select>
         </div>
 
+        {/* AMOUNT */}
         <div className="form-row">
           <input
             className="input"
@@ -112,15 +156,25 @@ export default function CreateFlag() {
           />
         </div>
 
+        {/* REASON */}
         <div className="form-row">
-          <input className="input" placeholder="Reason" value={form.reason} onChange={onChange("reason")} />
+          <input
+            className="input"
+            placeholder="Reason"
+            value={form.reason}
+            onChange={onChange("reason")}
+          />
         </div>
 
         <div className="form-actions">
           <button className="btn" type="submit">
             Save
           </button>
-          <button className="btn" type="button" onClick={() => navigate("/flags")}>
+          <button
+            className="btn"
+            type="button"
+            onClick={() => navigate("/flags")}
+          >
             Cancel
           </button>
         </div>

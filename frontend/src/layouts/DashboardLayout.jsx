@@ -18,7 +18,7 @@ export default function DashboardLayout() {
         return null;
       }
 
-      return payload; // ✅ return full user payload
+      return payload;
     } catch {
       localStorage.removeItem("token");
       return null;
@@ -42,6 +42,8 @@ export default function DashboardLayout() {
       "/schools",
       "/duplicates",
       "/consents",
+      "/students/import",
+      "/parents/import",
     ],
 
     SCHOOL_ADMIN: [
@@ -61,29 +63,17 @@ export default function DashboardLayout() {
       "/verify",
       "/verify/enrollment",
       "/students",
-        "/students/add",
-        "/parents",
+      "/students/add",
+      "/parents",
       "/parents/add",
     ],
 
-    TEST_RECEIVING_SCHOOL: [
-      "/dashboard",
-      "/verify",
-      "/verify/enrollment",
-      "/students",
-    ],
+    TEST_RECEIVING_SCHOOL: ["/dashboard", "/verify", "/verify/enrollment", "/students"],
 
-    BURSAR: [
-      "/dashboard",
-      "/verify",
-      "/flags",
-      "/flags/create",
-      "/students",
-      "/students/add",
-    ],
+    BURSAR: ["/dashboard", "/verify", "/flags", "/flags/create", "/students", "/students/add"],
   };
 
-  const allowedPaths = role ? (ROLE_ALLOW[role] || ["/dashboard"]) : ["/dashboard"];
+  const allowedPaths = role ? ROLE_ALLOW[role] || ["/dashboard"] : ["/dashboard"];
   const isAllowed = (path) => allowedPaths.includes(path);
 
   if (role && location?.pathname && !isAllowed(location.pathname)) {
@@ -99,83 +89,108 @@ export default function DashboardLayout() {
 
   return (
     <div className="app-shell">
-      <header className="topbar">
-        <div className="brand">
-          <div className="brand-icon"></div>
-          <div className="brand-text">
-            <div className="brand-title">Clear Enroll System</div>
+      {/* SIDEBAR */}
+      <aside className="sidebar">
+        <div className="sidebar-brand">
+          <div className="sidebar-logo">CE</div>
+          <div className="sidebar-brand-text">
+            <div className="sidebar-title">Clear Enroll</div>
+            <div className="sidebar-subtitle">Registry System</div>
+          </div>
+        </div>
 
-            {/* ✅ LOGGED-IN USER DISPLAY */}
+        <nav className="sidebar-nav">
+          <NavLink to="/dashboard" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
+            Dashboard
+          </NavLink>
+
+          {isAllowed("/verify") && (
+            <NavLink to="/verify" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
+              Verify
+            </NavLink>
+          )}
+
+          {isAllowed("/parents") && (
+            <NavLink to="/parents" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
+              Parents
+            </NavLink>
+          )}
+
+          {isAllowed("/students") && (
+            <NavLink to="/students" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
+              Students
+            </NavLink>
+          )}
+
+          {isAllowed("/flags") && (
+            <NavLink to="/flags" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
+              Flags
+            </NavLink>
+          )}
+
+          {isAllowed("/schools") && (
+            <NavLink to="/schools" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
+              Schools
+            </NavLink>
+          )}
+
+          {isAllowed("/verify/enrollment") && (
+            <NavLink
+              to="/verify/enrollment"
+              className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}
+            >
+              Verify Enrollment
+            </NavLink>
+          )}
+
+          {isAllowed("/duplicates") && (
+            <NavLink to="/duplicates" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
+              Duplicates
+            </NavLink>
+          )}
+
+          {isAllowed("/consents") && (
+            <NavLink to="/consents" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
+              Consents
+            </NavLink>
+          )}
+        </nav>
+
+        <div className="sidebar-footer">
+          {user && (
+            <div className="user-chip">
+              <div className="user-avatar">{String(user.email || "U").slice(0, 1).toUpperCase()}</div>
+              <div className="user-meta">
+                <div className="user-email">{user.email}</div>
+                <div className="user-role">{user.role}</div>
+              </div>
+            </div>
+          )}
+
+          {/* Logout should NOT look like the primary blue action */}
+          <button className="btn btn-secondary btn-block" onClick={logout}>
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* MAIN */}
+      <div className="main">
+        <header className="topbar">
+          <div className="topbar-title">
+            <div className="topbar-h1">Clear Enroll System</div>
             {user && (
-              <div className="brand-sub">
+              <div className="topbar-h2">
                 Logged in as <strong>{user.email}</strong> ({user.role})
               </div>
             )}
           </div>
-        </div>
+        </header>
 
-        <div className="top-actions">
-          <button className="btn" onClick={logout}>Logout</button>
-        </div>
-      </header>
-
-      <nav className="nav">
-        <NavLink to="/dashboard" className={({isActive}) => isActive ? "navlink active" : "navlink"}>
-          Dashboard
-        </NavLink>
-
-        {isAllowed("/verify") && (
-          <NavLink to="/verify" className={({isActive}) => isActive ? "navlink active" : "navlink"}>
-            Verify
-          </NavLink>
-        )}
-
-        {isAllowed("/parents") && (
-          <NavLink to="/parents" className={({isActive}) => isActive ? "navlink active" : "navlink"}>
-            Parents
-          </NavLink>
-        )}
-
-        {isAllowed("/students") && (
-          <NavLink to="/students" className={({isActive}) => isActive ? "navlink active" : "navlink"}>
-            Students
-          </NavLink>
-        )}
-
-        {isAllowed("/flags") && (
-          <NavLink to="/flags" className={({isActive}) => isActive ? "navlink active" : "navlink"}>
-            Flags
-          </NavLink>
-        )}
-
-        {isAllowed("/schools") && (
-          <NavLink to="/schools" className={({isActive}) => isActive ? "navlink active" : "navlink"}>
-            Schools
-          </NavLink>
-        )}
-
-        {isAllowed("/verify/enrollment") && (
-          <NavLink to="/verify/enrollment" className={({isActive}) => isActive ? "navlink active" : "navlink"}>
-            Verify Enrollment
-          </NavLink>
-        )}
-
-        {isAllowed("/duplicates") && (
-          <NavLink to="/duplicates" className={({isActive}) => isActive ? "navlink active" : "navlink"}>
-            Duplicates
-          </NavLink>
-        )}
-
-        {isAllowed("/consents") && (
-          <NavLink to="/consents" className={({isActive}) => isActive ? "navlink active" : "navlink"}>
-            Consents
-          </NavLink>
-        )}
-      </nav>
-
-      <main className="content">
-        <Outlet />
-      </main>
+        <main className="content">
+          <Outlet />
+        </main>
+      </div>
     </div>
   );
 }

@@ -18,7 +18,6 @@ export default function Login() {
   const [error, setError] = useState("");
 
     const API_URL = import.meta.env.VITE_API_URL;
-  // ✅ FIX 1: floating labels stay up
   useEffect(() => {
     const inputs = document.querySelectorAll(".input100");
 
@@ -82,7 +81,6 @@ export default function Login() {
 
             {/* Password */}
             <div className="wrap-input100 validate-input">
-              {/* ✅ FIX 2: working eye icon */}
               <span
                 className="btn-show-pass"
                 onClick={() => setShowPassword((prev) => !prev)}
@@ -120,6 +118,7 @@ export default function Login() {
             <div className="text-center p-t-115">
               <span className="txt1">Don’t have an account?</span>
               <a className="txt2" href="/register">Sign Up</a>
+              
             </div>
 
           </form>
