@@ -44,6 +44,7 @@ export default function DashboardLayout() {
       "/consents",
       "/students/import",
       "/parents/import",
+      "/allrecords",
     ],
 
     SCHOOL_ADMIN: [
@@ -134,24 +135,17 @@ export default function DashboardLayout() {
             </NavLink>
           )}
 
-          {isAllowed("/verify/enrollment") && (
-            <NavLink
-              to="/verify/enrollment"
-              className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}
-            >
-              Verify Enrollment
-            </NavLink>
-          )}
-
+     
           {isAllowed("/duplicates") && (
             <NavLink to="/duplicates" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
               Duplicates
             </NavLink>
           )}
 
-          {isAllowed("/consents") && (
-            <NavLink to="/consents" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-              Consents
+
+             {isAllowed("/allrecords") && (
+            <NavLink to="/allrecords" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
+             Add & Create Record
             </NavLink>
           )}
         </nav>

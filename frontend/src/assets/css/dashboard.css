@@ -341,8 +341,9 @@ html, body {
   background: #ffffff;
   color: #111827;
   border-color: var(--border);
+
 }
-.btn-secondary:hover { background: #f9fafb; }
+.btn-secondary:hover { background: #480101; }
 
 .btn-outline {
   background: transparent;
@@ -367,7 +368,7 @@ html, body {
 
 .btn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-.btn-block { width: 100%; }
+.btn-block { width: 80%; }
 
 /* ---------- Row Actions ---------- */
 .row-actions {
@@ -430,4 +431,31 @@ html, body {
 .content .card button,
 .content .card .btn {
   max-width: 240px;
+}
+
+
+/* ===============================
+   FORM SPACING (INPUT SEPARATION)
+   - adds clean vertical gaps
+================================ */
+.content form input,
+.content form select,
+.content form textarea {
+  margin-bottom: 14px;
+}
+
+/* Space after section titles */
+.content form h3 {
+  margin-bottom: 16px;
+}
+
+/* Space before submit buttons */
+.content form button {
+  margin-top: 8px;
+}
+
+
+.content input,
+.content select {
+  padding: 9px 12px;
 }

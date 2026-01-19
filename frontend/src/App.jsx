@@ -13,6 +13,10 @@ import Register from "./pages/auth/Register";
 /* ================= CORE ================= */
 import Dashboard from "./pages/dashboard/Dashboard";
 
+
+/* ================= allrecords ================= */
+import CreateRecords from "./pages/allinone/allinone";
+
 /* ================= VERIFY ================= */
 import Verify from "./pages/verify/Verify";
 import VerifyEnrollment from "./pages/verify/VerifyEnrollment";
@@ -53,6 +57,10 @@ export default function App() {
           {/* Default */}
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
           <Route path="/dashboard" element={<Dashboard />} />
+
+          
+          {/* records */}
+          <Route path="/allrecords" element={<CreateRecords />} />
 
           {/* Verify */}
           <Route path="/verify" element={<Verify />} />

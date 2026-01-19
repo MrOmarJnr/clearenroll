@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { api } from "../../services/api";
-import { Link } from "react-router-dom";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Students() {
   const [students, setStudents] = useState([]);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
   const navigate = useNavigate();
 
   const load = async () => {
@@ -22,24 +22,48 @@ export default function Students() {
     load();
   }, []);
 
+  // ======================
+  // Filter logic
+  // ======================
+  const filteredStudents = students.filter((s) => {
+    const term = search.toLowerCase();
+
+    return (
+      s.name?.toLowerCase().includes(term) ||
+      String(s.id).includes(term) ||
+      s.school?.toLowerCase().includes(term) ||
+      s.parent?.toLowerCase().includes(term) ||
+      s.gender?.toLowerCase().includes(term)
+    );
+  });
+
   return (
     <div className="card">
       <h2>Students</h2>
-
 
       <div className="row-actions">
         <Link className="link" to="/students/add">
           Add Student
         </Link>
-      
       </div>
 
       {error && <div className="danger">{error}</div>}
 
+      {/* ======================
+          SEARCH BOX
+         ====================== */}
+      <input
+        className="input"
+        placeholder="Search by name, ID, school, parent or gender..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ marginBottom: "12px" }}
+      />
+
       <table className="table">
         <thead>
           <tr>
-            <th>Name</th> 
+            <th>Name</th>
             <th>Student ID</th>
             <th>DOB</th>
             <th>Gender</th>
@@ -48,7 +72,7 @@ export default function Students() {
           </tr>
         </thead>
         <tbody>
-          {students.map((s) => (
+          {filteredStudents.map((s) => (
             <tr key={s.id}>
               <td>{s.name}</td>
               <td>{s.id}</td>
@@ -58,9 +82,10 @@ export default function Students() {
               <td>{s.parent}</td>
             </tr>
           ))}
-          {!students.length && (
+
+          {!filteredStudents.length && (
             <tr>
-              <td colSpan="5">No students yet.</td>
+              <td colSpan="6">No matching students found.</td>
             </tr>
           )}
         </tbody>

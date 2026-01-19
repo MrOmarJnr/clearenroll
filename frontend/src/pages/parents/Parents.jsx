@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 
 export default function Parents() {
   const [parents, setParents] = useState([]);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -12,12 +13,40 @@ export default function Parents() {
     })();
   }, []);
 
+  // ======================
+  // Filter logic
+  // ======================
+  const filteredParents = parents.filter((p) => {
+    const term = search.toLowerCase();
+
+    return (
+      p.full_name?.toLowerCase().includes(term) ||
+      p.phone?.toLowerCase().includes(term) ||
+      p.ghana_card_number?.toLowerCase().includes(term) ||
+      p.address?.toLowerCase().includes(term)
+    );
+  });
+
   return (
     <div className="card">
       <h2>Parents</h2>
+
       <div className="row-actions">
-        <Link className="link" to="/parents/add">Add Parent</Link>
+        <Link className="link" to="/parents/add">
+          Add Parent
+        </Link>
       </div>
+
+      {/* ======================
+          SEARCH BOX
+         ====================== */}
+      <input
+        className="input"
+        placeholder="Search by name, phone, Ghana Card or address..."
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ marginBottom: "12px" }}
+      />
 
       <table className="table">
         <thead>
@@ -29,7 +58,7 @@ export default function Parents() {
           </tr>
         </thead>
         <tbody>
-          {parents.map(p => (
+          {filteredParents.map((p) => (
             <tr key={p.id}>
               <td>{p.full_name}</td>
               <td>{p.phone}</td>
@@ -37,7 +66,12 @@ export default function Parents() {
               <td>{p.address || "-"}</td>
             </tr>
           ))}
-          {!parents.length && <tr><td colSpan="4">No parents yet.</td></tr>}
+
+          {!filteredParents.length && (
+            <tr>
+              <td colSpan="4">No matching parents found.</td>
+            </tr>
+          )}
         </tbody>
       </table>
     </div>
