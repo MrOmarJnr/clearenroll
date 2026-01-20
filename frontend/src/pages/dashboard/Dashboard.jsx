@@ -121,7 +121,7 @@ export default function Dashboard() {
                 <th>Student</th>
                 <th>Parent</th>
                 <th>Reported By</th>
-                <th className="td-right">Amount</th>
+                <th className="td-left">Amount</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -131,7 +131,7 @@ export default function Dashboard() {
                   <td>{f.student}</td>
                   <td>{f.parent}</td>
                   <td>{f.reported_by}</td>
-                  <td className="td-right">{f.amount_owed}</td>
+                  <td className="td-left">{f.amount_owed}</td>
                   <td>
                     <span className={badgeClass(f.status)}>{f.status}</span>
                   </td>
@@ -181,7 +181,7 @@ export default function Dashboard() {
                 <th>Student</th>
                 <th>Parent</th>
                 <th>School</th>
-                <th className="td-right">Amount</th>
+                <th className="td-left">Amount</th>
                 <th>Status</th>
                 <th>My Action</th>
               </tr>
@@ -192,7 +192,7 @@ export default function Dashboard() {
                   <td>{f.student}</td>
                   <td>{f.parent}</td>
                   <td>{f.school}</td>
-                  <td className="td-right">{f.amount_owed}</td>
+                  <td className="td-left">{f.amount_owed}</td>
                   <td>
                     <span className={badgeClass(f.status)}>{f.status}</span>
                   </td>

@@ -261,6 +261,41 @@ app.post("/parents", authMiddleware, async (req, res) => {
   });
 });
 
+// Update parent
+app.put("/parents/:id", authMiddleware, async (req, res) => {
+  await pool.query(
+    `UPDATE parents SET full_name=?, phone=?, ghana_card_number=?, address=? WHERE id=?`,
+    [
+      req.body.full_name,
+      req.body.phone,
+      req.body.ghana_card_number,
+      req.body.address,
+      req.params.id,
+    ]
+  );
+  res.json({ message: "Parent updated" });
+});
+
+// Delete parent
+app.delete("/parents/:id", authMiddleware, async (req, res) => {
+  await pool.query(`DELETE FROM parents WHERE id=?`, [req.params.id]);
+  res.json({ message: "Parent deleted" });
+});
+
+
+// Get single parent
+app.get("/parents/:id", authMiddleware, async (req, res) => {
+  const [rows] = await pool.query(
+    "SELECT * FROM parents WHERE id = ?",
+    [req.params.id]
+  );
+  if (!rows.length) {
+    return res.status(404).json({ message: "Parent not found" });
+  }
+  res.json({ parent: rows[0] });
+});
+
+
 // ======================
 // Students (Option A response shape)
 // ======================
@@ -273,11 +308,11 @@ app.get("/students", authMiddleware, async (req, res) => {
       s.date_of_birth,
       s.gender,
 
-      -- ✅ IDs (FOR LOGIC)
+      --  IDs (FOR LOGIC)
       s.current_school_id AS school_id,
       sp.parent_id,
 
-      -- ✅ Names (FOR DISPLAY)
+      --  Names (FOR DISPLAY)
       sch.name AS school,
       p.full_name AS parent
 
@@ -355,9 +390,9 @@ if (matches.length > 0) {
       ]
     );
 
-    console.log("✅ DUPLICATE REVIEW INSERTED:", insertResult);
+    console.log(" DUPLICATE REVIEW INSERTED:", insertResult);
   } catch (err) {
-    console.error("❌ DUPLICATE REVIEW INSERT FAILED:", err);
+    console.error(" DUPLICATE REVIEW INSERT FAILED:", err);
   }
 
   return res.status(409).json({
@@ -422,6 +457,97 @@ if (matches.length > 0) {
   }
 });
 
+
+app.get("/students/:id", authMiddleware, async (req, res) => {
+  const [rows] = await pool.query(
+    `
+    SELECT
+      s.*,
+      sp.parent_id
+    FROM students s
+    LEFT JOIN student_parents sp
+      ON sp.student_id = s.id
+    WHERE s.id = ?
+    `,
+    [req.params.id]
+  );
+
+  if (!rows.length) {
+    return res.status(404).json({ message: "Not found" });
+  }
+
+  res.json({ student: rows[0] });
+});
+
+
+// Update student
+app.put("/students/:id", authMiddleware, async (req, res) => {
+  const {
+    first_name,
+    last_name,
+    other_names,
+    date_of_birth,
+    gender,
+    current_school_id,
+    parent_id,
+  } = req.body;
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1️⃣ Update student core data
+    await conn.query(
+      `
+      UPDATE students SET
+        first_name=?,
+        last_name=?,
+        other_names=?,
+        date_of_birth=?,
+        gender=?,
+        current_school_id=?
+      WHERE id=?
+      `,
+      [
+        first_name,
+        last_name,
+        other_names || null,
+        date_of_birth,
+        gender,
+        current_school_id,
+        req.params.id,
+      ]
+    );
+
+    // 2️⃣ Update parent relationship
+    await conn.query(
+      `
+      UPDATE student_parents
+      SET parent_id=?
+      WHERE student_id=?
+      `,
+      [parent_id, req.params.id]
+    );
+
+    await conn.commit();
+    res.json({ message: "Student updated" });
+  } catch (err) {
+    await conn.rollback();
+    console.error("UPDATE STUDENT ERROR:", err);
+    res.status(500).json({ message: "Failed to update student" });
+  } finally {
+    conn.release();
+  }
+});
+
+
+// Delete student
+app.delete("/students/:id", authMiddleware, async (req, res) => {
+  await pool.query("DELETE FROM students WHERE id = ?", [req.params.id]);
+  res.json({ message: "Student deleted" });
+});
+
+
 // ======================
 // Dashboard (UPDATED: pendingDuplicates badge count)
 // ======================
@@ -434,7 +560,7 @@ app.get("/dashboard", authMiddleware, async (req, res) => {
       "SELECT COUNT(*) AS total FROM flags WHERE status = 'FLAGGED'"
     );
 
-    // ✅ NEW: pending duplicate reviews count
+    //  NEW: pending duplicate reviews count
     const [[pendingDuplicates]] = await pool.query(
       "SELECT COUNT(*) AS total FROM duplicate_reviews WHERE decision IS NULL"
     );
@@ -454,7 +580,7 @@ app.get("/dashboard", authMiddleware, async (req, res) => {
       ORDER BY f.created_at DESC
       LIMIT 5
     `);
-    // ✅ MY FLAG ACTIVITY (CREATED OR CLEARED BY ME)
+    //  MY FLAG ACTIVITY (CREATED OR CLEARED BY ME)
     const [myFlagActivity] = await pool.query(
       `
       SELECT
@@ -493,7 +619,7 @@ app.get("/dashboard", authMiddleware, async (req, res) => {
     pendingDuplicates: pendingDuplicates.total,
   },
   recentFlags,
-  myFlagActivity, // ✅ THIS WAS MISSING
+  myFlagActivity, 
 });
 
 
@@ -629,12 +755,24 @@ app.patch("/flags/:id/clear", authMiddleware, async (req, res) => {
 });
 
 // ======================
-// Verify (Registry Lookup – Admin)  ✅ matches Verify.jsx
+// Verify (Registry Lookup – Admin)   matches Verify.jsx
+// ======================
+// ======================
+// Verify (Registry Lookup – Admin) ✅ FIXED
 // ======================
 app.post("/verify", authMiddleware, async (req, res) => {
-  const { query } = req.body;
-  if (!query) {
+  let { query } = req.body;
+
+  if (!query || !query.trim()) {
     return res.status(400).json({ message: "Search query required" });
+  }
+
+  // ✅ Normalize input
+  query = query.trim();
+
+  // Uppercase Ghana Card if used
+  if (query.toUpperCase().startsWith("GHA-")) {
+    query = query.toUpperCase();
   }
 
   const [parents] = await pool.query(
@@ -648,25 +786,24 @@ app.post("/verify", authMiddleware, async (req, res) => {
     [query, query, `%${query}%`]
   );
 
-const [students] = await pool.query(
-  `
-  SELECT DISTINCT
-    s.id,
-    CONCAT(s.first_name,' ',s.last_name) AS name,
-    sc.name AS school
-  FROM students s
-  JOIN schools sc ON sc.id = s.current_school_id
-  JOIN student_parents sp ON sp.student_id = s.id
-  JOIN parents p ON p.id = sp.parent_id
-  WHERE
-    p.phone = ?
-    OR p.ghana_card_number = ?
-    OR p.full_name LIKE ?
-    OR CONCAT(s.first_name,' ',s.last_name) LIKE ?
-  `,
-  [query, query, `%${query}%`, `%${query}%`]
-);
-
+  const [students] = await pool.query(
+    `
+    SELECT DISTINCT
+      s.id,
+      CONCAT(s.first_name,' ',s.last_name) AS name,
+      sc.name AS school
+    FROM students s
+    JOIN schools sc ON sc.id = s.current_school_id
+    JOIN student_parents sp ON sp.student_id = s.id
+    JOIN parents p ON p.id = sp.parent_id
+    WHERE
+      p.phone = ?
+      OR p.ghana_card_number = ?
+      OR p.full_name LIKE ?
+      OR CONCAT(s.first_name,' ',s.last_name) LIKE ?
+    `,
+    [query, query, `%${query}%`, `%${query}%`]
+  );
 
   const [flags] = await pool.query(
     `
@@ -692,6 +829,17 @@ const [students] = await pool.query(
     [query, query, `%${query}%`, `%${query}%`]
   );
 
+  // 🚨 NEW: NO RECORD FOUND
+  if (!parents.length && !students.length) {
+    return res.json({
+      status: "NOT_FOUND",
+      parents: [],
+      students: [],
+      flags: [],
+    });
+  }
+
+  // ✅ RECORD EXISTS
   res.json({
     status: flags.length ? "FLAGGED" : "CLEAR",
     parents,
@@ -699,6 +847,7 @@ const [students] = await pool.query(
     flags,
   });
 });
+
 
 // ======================
 // Verify Student (Enrollment Check)

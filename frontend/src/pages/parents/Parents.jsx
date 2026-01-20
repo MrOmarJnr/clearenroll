@@ -1,29 +1,27 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
-import { Link } from "react-router-dom";
 
 export default function Parents() {
   const [parents, setParents] = useState([]);
   const [search, setSearch] = useState("");
+  const navigate = useNavigate();
+
+  const load = async () => {
+    const data = await api("/parents");
+    setParents(data.parents || []);
+  };
 
   useEffect(() => {
-    (async () => {
-      const data = await api("/parents");
-      setParents(data.parents || []);
-    })();
+    load();
   }, []);
 
-  // ======================
-  // Filter logic
-  // ======================
-  const filteredParents = parents.filter((p) => {
-    const term = search.toLowerCase();
-
+  const filtered = parents.filter((p) => {
+    const t = search.toLowerCase().trim();
     return (
-      p.full_name?.toLowerCase().includes(term) ||
-      p.phone?.toLowerCase().includes(term) ||
-      p.ghana_card_number?.toLowerCase().includes(term) ||
-      p.address?.toLowerCase().includes(term)
+      p.full_name?.toLowerCase().includes(t) ||
+      p.phone?.includes(t) ||
+      p.ghana_card_number?.toLowerCase().includes(t)
     );
   });
 
@@ -31,21 +29,12 @@ export default function Parents() {
     <div className="card">
       <h2>Parents</h2>
 
-      <div className="row-actions">
-        <Link className="link" to="/parents/add">
-          Add Parent
-        </Link>
-      </div>
-
-      {/* ======================
-          SEARCH BOX
-         ====================== */}
       <input
         className="input"
-        placeholder="Search by name, phone, Ghana Card or address..."
+        placeholder="Search parents…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        style={{ marginBottom: "12px" }}
+        style={{ maxWidth: 600, marginBottom: 14 }}
       />
 
       <table className="table">
@@ -55,21 +44,30 @@ export default function Parents() {
             <th>Phone</th>
             <th>Ghana Card</th>
             <th>Address</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
-          {filteredParents.map((p) => (
+          {filtered.map((p) => (
             <tr key={p.id}>
               <td>{p.full_name}</td>
               <td>{p.phone}</td>
               <td>{p.ghana_card_number || "-"}</td>
               <td>{p.address || "-"}</td>
+              <td>
+                <button
+                  className="btn btn-outline"
+                  onClick={() => navigate(`/parents/${p.id}/edit`)}
+                >
+                  Modify
+                </button>
+              </td>
             </tr>
           ))}
 
-          {!filteredParents.length && (
+          {!filtered.length && (
             <tr>
-              <td colSpan="4">No matching parents found.</td>
+              <td colSpan="5">No parents found</td>
             </tr>
           )}
         </tbody>

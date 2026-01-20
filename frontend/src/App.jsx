@@ -25,10 +25,12 @@ import VerifyEnrollment from "./pages/verify/VerifyEnrollment";
 import Parents from "./pages/parents/Parents";
 import AddParent from "./pages/parents/AddParent";
 import ParentsImport from "./pages/parents/ParentsImport";
+import EditParent from "./pages/parents/EditParent";
 
 import Students from "./pages/students/Students";
 import AddStudent from "./pages/students/AddStudent";
 import StudentsImport from "./pages/students/StudentsImport"; 
+import EditStudent from "./pages/students/EditStudent";
 
 import Flags from "./pages/flags/Flags";
 import CreateFlag from "./pages/flags/CreateFlag";
@@ -70,11 +72,13 @@ export default function App() {
           <Route path="/parents" element={<Parents />} />
           <Route path="/parents/add" element={<AddParent />} />
           <Route path="/parents/import" element={<ParentsImport />} />
+          <Route path="/parents/:id/edit" element={<EditParent />} />
 
           {/* Students */}
           <Route path="/students" element={<Students />} />
           <Route path="/students/add" element={<AddStudent />} />
            <Route path="/students/import" element={<StudentsImport />} />
+           <Route path="/students/:id/edit" element={<EditStudent />} />
 
           {/* Flags */}
           <Route path="/flags" element={<Flags />} />

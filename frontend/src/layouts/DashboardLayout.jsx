@@ -45,6 +45,8 @@ export default function DashboardLayout() {
       "/students/import",
       "/parents/import",
       "/allrecords",
+      "/parents/:id/edit",
+       "/students/:id/edit"
     ],
 
     SCHOOL_ADMIN: [
@@ -75,7 +77,18 @@ export default function DashboardLayout() {
   };
 
   const allowedPaths = role ? ROLE_ALLOW[role] || ["/dashboard"] : ["/dashboard"];
-  const isAllowed = (path) => allowedPaths.includes(path);
+const isAllowed = (path) => {
+  return allowedPaths.some((allowed) => {
+    if (allowed.includes(":")) {
+      // convert /parents/:id/edit → regex
+      const regex = new RegExp(
+        "^" + allowed.replace(/:[^/]+/g, "[^/]+") + "$"
+      );
+      return regex.test(path);
+    }
+    return allowed === path;
+  });
+};
 
   if (role && location?.pathname && !isAllowed(location.pathname)) {
     if (location.pathname !== "/dashboard") {

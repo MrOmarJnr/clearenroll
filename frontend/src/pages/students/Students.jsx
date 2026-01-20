@@ -22,12 +22,8 @@ export default function Students() {
     load();
   }, []);
 
-  // ======================
-  // Filter logic
-  // ======================
   const filteredStudents = students.filter((s) => {
-    const term = search.toLowerCase();
-
+    const term = search.toLowerCase().trim();
     return (
       s.name?.toLowerCase().includes(term) ||
       String(s.id).includes(term) ||
@@ -49,15 +45,12 @@ export default function Students() {
 
       {error && <div className="danger">{error}</div>}
 
-      {/* ======================
-          SEARCH BOX
-         ====================== */}
       <input
         className="input"
         placeholder="Search by name, ID, school, parent or gender..."
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        style={{ marginBottom: "12px" }}
+        style={{ maxWidth: 600, marginBottom: 12 }}
       />
 
       <table className="table">
@@ -69,6 +62,7 @@ export default function Students() {
             <th>Gender</th>
             <th>School</th>
             <th>Parent</th>
+            <th></th>
           </tr>
         </thead>
         <tbody>
@@ -80,12 +74,21 @@ export default function Students() {
               <td>{s.gender}</td>
               <td>{s.school}</td>
               <td>{s.parent}</td>
+              <td>
+                <button
+                  type="button"
+                  className="btn btn-outline"
+                  onClick={() => navigate(`/students/${s.id}/edit`)}
+                >
+                  Modify
+                </button>
+              </td>
             </tr>
           ))}
 
           {!filteredStudents.length && (
             <tr>
-              <td colSpan="6">No matching students found.</td>
+              <td colSpan="7">No matching students found.</td>
             </tr>
           )}
         </tbody>
