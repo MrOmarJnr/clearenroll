@@ -9,7 +9,7 @@ export default function Verify() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Modal selection
+  // Modal selection (row from Students table: includes parent_id)
   const [selectedStudent, setSelectedStudent] = useState(null);
 
   // ======================
@@ -22,8 +22,9 @@ export default function Verify() {
     setSelectedStudent(null);
 
     const cleaned = query.trim();
+
     if (!cleaned) {
-      setError("Please enter a student name, phone number or Ghana Card number.");
+      setError("Please enter a student name, parent name, phone, or Ghana Card.");
       return;
     }
 
@@ -49,27 +50,23 @@ export default function Verify() {
   };
 
   // ======================
-  // Image helpers (same idea as Flags page)
+  // Image helpers (same idea as Flags)
   // ======================
   const buildPhotoUrl = (photo) => {
     if (!photo) return null;
 
-    // If already a full URL
     if (typeof photo === "string" && (photo.startsWith("http://") || photo.startsWith("https://"))) {
       return photo;
     }
 
-    // If already absolute path
     if (typeof photo === "string" && photo.startsWith("/")) {
       return `${API_URL}${photo}`;
     }
 
-    // Your DB currently stores something like: uploads/students/name.jpg OR just name.jpg
     if (typeof photo === "string" && photo.startsWith("uploads/")) {
       return `${API_URL}/${photo}`;
     }
 
-    // Fallback to your standard student upload folder
     return `${API_URL}/uploads/students/${photo}`;
   };
 
@@ -111,8 +108,7 @@ export default function Verify() {
   };
 
   // ======================
-  // CRITICAL FIX:
-  // Modal must show ONLY selected student's flags
+  // FIX: Modal shows ONLY flags for selected row (student + parent)
   // ======================
   const getSelectedRowFlags = () => {
     if (!result || !selectedStudent) return [];
@@ -147,15 +143,6 @@ export default function Verify() {
     if (s.includes("T")) return s.split("T")[0];
     return s;
   };
-
-  // Breakdown: group by Parent, then list each flag
-  const flagsByParent = selectedFlags.reduce((acc, f) => {
-    const key = f.parent || "Unknown Parent";
-    if (!acc[key]) acc[key] = [];
-    acc[key].push(f);
-    return acc;
-  }, {});
-
 
   return (
     <>
@@ -246,8 +233,8 @@ export default function Verify() {
               <tbody>
                 {result.students && result.students.length ? (
                   result.students.map((s) => (
-                    <tr key={s.id}>
-                      <td>{renderStudentPhoto(s.student_photo, 90)}</td>
+                    <tr key={`${s.id}-${s.parent_id || "noparent"}`}>
+                      <td>{renderStudentPhoto(s.student_photo, 45)}</td>
                       <td>{s.name}</td>
                       <td>{s.parent_name || "-"}</td>
                       <td>{s.school}</td>
@@ -304,10 +291,7 @@ export default function Verify() {
         </>
       )}
 
-      {/* =========================
-          MODAL (FULL, NOT REDUCED)
-          Fix: ONLY selected student totals/breakdown
-         ========================= */}
+      {/* MODAL */}
       {selectedStudent && (
         <div
           onClick={closeModal}
@@ -336,19 +320,17 @@ export default function Verify() {
             <div style={{ display: "flex", justifyContent: "space-between", gap: 20 }}>
               <div>
                 <h2 style={{ marginBottom: 6 }}>Student Details</h2>
-                <div style={{ opacity: 0.75 }}>
-                  Registry view (student-first)
-                </div>
+                <div style={{ opacity: 0.75 }}>Registry view (student-first)</div>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                {renderStudentPhoto(selectedStudent.student_photo, 150)}
+                {renderStudentPhoto(selectedStudent.student_photo, 90)}
               </div>
             </div>
 
             <hr style={{ margin: "14px 0" }} />
 
-                {/* Student Info */}
+            {/* Student Info */}
             <div className="card" style={{ marginBottom: 14 }}>
               <h3 style={{ marginBottom: 10 }}>Personal Information</h3>
               <table className="table">

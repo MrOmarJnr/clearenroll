@@ -1,90 +1,90 @@
 import { useEffect, useState } from "react";
-import { api } from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import { api } from "../../services/api";
 
 export default function CreateFlag() {
   const navigate = useNavigate();
 
-  const [schools, setSchools] = useState([]);
-  const [parents, setParents] = useState([]);
   const [students, setStudents] = useState([]);
+  const [parents, setParents] = useState([]);
+
+  const [studentId, setStudentId] = useState("");
+  const [parentId, setParentId] = useState("");
+  const [reportedBySchoolId, setReportedBySchoolId] = useState("");
+
+  const [amountOwed, setAmountOwed] = useState("");
+  const [currency, setCurrency] = useState("GHS"); // ✅ restored
+  const [reason, setReason] = useState("");
+
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const [form, setForm] = useState({
-    student_id: "",
-    parent_id: "",
-    reported_by_school_id: "",
-    amount_owed: "",
-    reason: "",
-  });
+  // ===============================
+  // LOAD STUDENTS + PARENTS
+  // ===============================
+  useEffect(() => {
+    (async () => {
+      try {
+        const s = await api("/students");
+        const p = await api("/parents");
 
-  // ======================
-  // LOAD DATA
-  // ======================
-useEffect(() => {
-  (async () => {
-    const sch = await api("/schools");
-    setSchools(sch.schools || []);
+        setStudents(s.students || []);
+        setParents(p.parents || []);
+      } catch (err) {
+        setError(err.message);
+      }
+    })();
+  }, []);
 
-    const par = await api("/parents");
-    setParents(par.parents || []);
+  // ===============================
+  // STUDENT CHANGE → AUTO SCHOOL + PARENT
+  // ===============================
+  const onStudentChange = (e) => {
+    const id = e.target.value;
+    setStudentId(id);
 
-    const std = await api("/students");
-    console.log("STUDENTS API RESPONSE:", std); // 👈 ADD THIS
-    setStudents(std.students || []);
-  })();
-}, []);
+    const selected = students.find(
+      (s) => String(s.id) === String(id)
+    );
 
-  const onChange = (k) => (e) =>
-    setForm({ ...form, [k]: e.target.value });
+    console.log("SELECTED STUDENT:", selected);
 
-  // ======================
-  // AUTO POPULATE PARENT + SCHOOL
-  // ======================
- const onStudentChange = (e) => {
-  const studentId = e.target.value;
+    if (!selected) return;
 
-  console.log("SELECTED STUDENT ID:", studentId);
+    setParentId(selected.parent_id || "");
+    setReportedBySchoolId(selected.school_id);
+  };
 
-  const selectedStudent = students.find(
-    (s) => String(s.id) === String(studentId)
-  );
-
-  console.log("MATCHED STUDENT OBJECT:", selectedStudent);
-
-  if (!selectedStudent) return;
-
-  setForm({
-    ...form,
-    student_id: studentId,
-    parent_id: selectedStudent.parent_id || "",
-    reported_by_school_id:
-      selectedStudent.school_id || selectedStudent.current_school_id || "",
-  });
-};
-
-  // ======================
+  // ===============================
   // SUBMIT
-  // ======================
+  // ===============================
   const submit = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
+
+    const payload = {
+      student_id: Number(studentId),
+      parent_id: parentId ? Number(parentId) : null,
+      reported_by_school_id: Number(reportedBySchoolId), // ✅ REQUIRED
+      amount_owed: Number(amountOwed),
+      currency, // ✅ WORKS
+      reason,
+    };
+
+    console.log("CREATE FLAG PAYLOAD:", payload);
 
     try {
       await api("/flags", {
         method: "POST",
-        body: JSON.stringify({
-          student_id: Number(form.student_id),
-          parent_id: form.parent_id ? Number(form.parent_id) : null,
-          reported_by_school_id: Number(form.reported_by_school_id),
-          amount_owed: Number(form.amount_owed),
-          reason: form.reason?.trim() || "Unpaid fees",
-        }),
+        body: JSON.stringify(payload),
       });
 
       navigate("/flags");
     } catch (err) {
       setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -96,30 +96,32 @@ useEffect(() => {
 
       <form onSubmit={submit}>
         {/* STUDENT */}
-        <div className="form-row">
+        <div className="form-group">
+          <label>Student</label>
           <select
-            className="select"
-            value={form.student_id}
+            className="input"
+            value={studentId}
             onChange={onStudentChange}
             required
           >
-            <option value="">Select Student</option>
+            <option value="">Select student</option>
             {students.map((s) => (
               <option key={s.id} value={s.id}>
-                {s.name} ({String(s.date_of_birth).slice(0, 10)})
+                {s.name} ({s.school})
               </option>
             ))}
           </select>
         </div>
 
-        {/* PARENT (AUTO POPULATED) */}
-        <div className="form-row">
+        {/* PARENT */}
+        <div className="form-group">
+          <label>Parent (optional)</label>
           <select
-            className="select"
-            value={form.parent_id}
-            onChange={onChange("parent_id")}
+            className="input"
+            value={parentId}
+            onChange={(e) => setParentId(e.target.value)}
           >
-            <option value="">Select Parent (optional)</option>
+            <option value="">Select parent</option>
             {parents.map((p) => (
               <option key={p.id} value={p.id}>
                 {p.full_name}
@@ -128,51 +130,49 @@ useEffect(() => {
           </select>
         </div>
 
-        {/* SCHOOL (AUTO POPULATED) */}
-        <div className="form-row">
-          <select
-            className="select"
-            value={form.reported_by_school_id}
-            onChange={onChange("reported_by_school_id")}
+        {/* AMOUNT */}
+        <div className="form-group">
+          <label>Amount Owed</label>
+          <input
+            type="number"
+            className="input"
+            value={amountOwed}
+            onChange={(e) => setAmountOwed(e.target.value)}
             required
+          />
+        </div>
+
+        {/* CURRENCY */}
+        <div className="form-group">
+          <label>Currency</label>
+          <select
+            className="input"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
           >
-            <option value="">Select Reported By School</option>
-            {schools.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
+            <option value="GHS">GHS</option>
+            <option value="USD">USD</option>
           </select>
         </div>
 
-        {/* AMOUNT */}
-        <div className="form-row">
-          <input
-            className="input"
-            placeholder="Amount Owed"
-            value={form.amount_owed}
-            onChange={onChange("amount_owed")}
-            required
-          />
-        </div>
-
         {/* REASON */}
-        <div className="form-row">
-          <input
+        <div className="form-group">
+          <label>Reason</label>
+          <textarea
             className="input"
-            placeholder="Reason"
-            value={form.reason}
-            onChange={onChange("reason")}
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
           />
         </div>
 
-        <div className="form-actions">
-          <button className="btn" type="submit">
-            Save
+        <div className="row-actions">
+          <button className="btn" disabled={loading}>
+            {loading ? "Saving..." : "Create Flag"}
           </button>
+
           <button
-            className="btn"
             type="button"
+            className="btn secondary"
             onClick={() => navigate("/flags")}
           >
             Cancel

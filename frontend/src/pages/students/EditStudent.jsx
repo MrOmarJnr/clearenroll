@@ -10,6 +10,7 @@ export default function EditStudent() {
   const [parents, setParents] = useState([]);
   const [error, setError] = useState("");
 
+  // ✅ EXTENDED FORM (keeps guardian + adds missing fields)
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
@@ -17,9 +18,15 @@ export default function EditStudent() {
     date_of_birth: "",
     gender: "Male",
     current_school_id: "",
+    leaving_class: "",
+    student_school_id: "",
     parent_id: "",
+    student_photo: null, // new upload
   });
 
+  // ======================
+  // Load student, schools, parents
+  // ======================
   useEffect(() => {
     (async () => {
       try {
@@ -30,16 +37,20 @@ export default function EditStudent() {
         setParents(p.parents || []);
 
         const data = await api(`/students/${id}`);
+        const st = data.student;
+
         setForm({
-          first_name: data.student.first_name,
-          last_name: data.student.last_name,
-          other_names: data.student.other_names || "",
-          date_of_birth: String(data.student.date_of_birth).slice(0, 10),
-          gender: data.student.gender,
-          current_school_id: data.student.current_school_id,
-         parent_id: String(data.student.parent_id),
+          first_name: st.first_name || "",
+          last_name: st.last_name || "",
+          other_names: st.other_names || "",
+          date_of_birth: String(st.date_of_birth).slice(0, 10),
+          gender: st.gender || "Male",
+          current_school_id: st.current_school_id || "",
+          leaving_class: st.leaving_class || "",
+          student_school_id: st.student_school_id || "",
+          parent_id: st.parent_id ? String(st.parent_id) : "",
+          student_photo: null,
         });
-        console.log( data);
       } catch {
         setError("Failed to load student");
       }
@@ -49,21 +60,52 @@ export default function EditStudent() {
   const onChange = (k) => (e) =>
     setForm({ ...form, [k]: e.target.value });
 
+  // ======================
+  // SAVE (FormData)
+  // ======================
   const save = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
+      const fd = new FormData();
+
+      fd.append("first_name", form.first_name);
+      fd.append("last_name", form.last_name);
+      fd.append("other_names", form.other_names || "");
+      fd.append("date_of_birth", form.date_of_birth);
+      fd.append("gender", form.gender);
+      fd.append("current_school_id", form.current_school_id);
+      fd.append("leaving_class", form.leaving_class);
+      fd.append("student_school_id", form.student_school_id || "");
+
+      if (form.student_photo) {
+        fd.append("student_photo", form.student_photo);
+      }
+
+      // ✅ Update student
       await api(`/students/${id}`, {
         method: "PUT",
-        body: JSON.stringify(form),
+        body: fd,
       });
+
+      // ✅ Assign guardian / parent (kept logic)
+      if (form.parent_id) {
+        await api(`/students/${id}/assign-parent`, {
+          method: "PATCH",
+          body: JSON.stringify({ parent_id: form.parent_id }),
+        });
+      }
+
       navigate("/students");
     } catch (err) {
       setError(err.message || "Failed to update student");
     }
   };
 
+  // ======================
+  // DELETE
+  // ======================
   const remove = async () => {
     if (!confirm("Delete this student permanently?")) return;
     try {
@@ -135,20 +177,48 @@ export default function EditStudent() {
           ))}
         </select>
 
-     <select
-  className="select"
-  value={form.parent_id}
-  onChange={onChange("parent_id")}
-  required
->
-  <option value="">Select Parent / Guardian</option>
-  {parents.map((p) => (
-    <option key={p.id} value={String(p.id)}>
-      {p.full_name}
-    </option>
-  ))}
-</select>
+        <input
+          className="input"
+          placeholder="Leaving Class / Grade"
+          value={form.leaving_class}
+          onChange={onChange("leaving_class")}
+          required
+        />
 
+        <input
+          className="input"
+          placeholder="Student ID from Previous School"
+          value={form.student_school_id}
+          onChange={onChange("student_school_id")}
+        />
+
+        {/* ✅ GUARDIAN / PARENT (KEPT) */}
+        <select
+          className="select"
+          value={form.parent_id}
+          onChange={onChange("parent_id")}
+          required
+        >
+          <option value="">Select Parent / Guardian</option>
+          {parents.map((p) => (
+            <option key={p.id} value={String(p.id)}>
+              {p.full_name}
+            </option>
+          ))}
+        </select>
+
+        {/* ✅ PHOTO UPLOAD */}
+        <input
+          type="file"
+          className="input"
+          accept="image/*"
+          onChange={(e) =>
+            setForm({
+              ...form,
+              student_photo: e.target.files?.[0] || null,
+            })
+          }
+        />
 
         <div className="form-actions">
           <button className="btn btn-primary" type="submit">

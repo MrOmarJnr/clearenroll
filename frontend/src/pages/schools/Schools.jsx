@@ -43,13 +43,13 @@ export default function Schools() {
 
       <table className="table">
         <thead>
-          <tr><th>ID</th><th>Name</th></tr>
+          <tr><th>ID</th><th>Name</th><th>Location</th></tr>
         </thead>
         <tbody>
           {schools.map(s => (
-            <tr key={s.id}><td>{s.id}</td><td>{s.name}</td></tr>
+            <tr key={s.id}><td>{s.id}</td><td>{s.name}</td><td>{s.location}</td></tr>
           ))}
-          {!schools.length && <tr><td colSpan="2">No schools yet.</td></tr>}
+          {!schools.length && <tr><td colSpan="3">No schools yet.</td></tr>}
         </tbody>
       </table>
     </div>

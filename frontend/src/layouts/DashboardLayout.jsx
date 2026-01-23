@@ -50,7 +50,7 @@ export default function DashboardLayout() {
     ],
 
     SCHOOL_ADMIN: [
-      "/dashboard",
+     "/dashboard",
       "/verify",
       "/verify/enrollment",
       "/parents",
@@ -59,6 +59,14 @@ export default function DashboardLayout() {
       "/students/add",
       "/flags",
       "/flags/create",
+      "/schools",
+      "/duplicates",
+      "/consents",
+      "/students/import",
+      "/parents/import",
+      "/allrecords",
+      "/parents/:id/edit",
+       "/students/:id/edit"
     ],
 
     ADMISSIONS: [
@@ -120,7 +128,7 @@ const isAllowed = (path) => {
 
           {isAllowed("/verify") && (
             <NavLink to="/verify" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-              Verify
+              Verify New Student
             </NavLink>
           )}
 
@@ -132,13 +140,13 @@ const isAllowed = (path) => {
 
           {isAllowed("/students") && (
             <NavLink to="/students" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-              Students
+             My Students / Debtors List
             </NavLink>
           )}
 
           {isAllowed("/flags") && (
             <NavLink to="/flags" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-              Flags
+              Flags in System
             </NavLink>
           )}
 

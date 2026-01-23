@@ -2,33 +2,101 @@ import { useEffect, useState } from "react";
 import { api } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 
+/* ======================
+   Searchable School Select
+====================== */
+function SearchableSchoolSelect({ schools, value, onChange }) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const selected = schools.find((s) => String(s.id) === String(value));
+
+  const filtered = schools.filter((s) =>
+    s.name.toLowerCase().includes(query.toLowerCase().trim())
+  );
+
+  const choose = (school) => {
+    onChange(String(school.id));
+    setQuery("");
+    setOpen(false);
+  };
+
+  return (
+    <div style={{ position: "relative" }}>
+      <input
+        className="input"
+        placeholder={selected ? selected.name : "Search school..."}
+        value={query}
+        onChange={(e) => {
+          setQuery(e.target.value);
+          setOpen(true);
+        }}
+        onFocus={() => setOpen(true)}
+      />
+
+      {open && (
+        <div
+          className="card"
+          style={{
+            position: "absolute",
+            top: "100%",
+            left: 0,
+            right: 0,
+            zIndex: 50,
+            marginTop: 6,
+            maxHeight: 220,
+            overflowY: "auto",
+            padding: 8,
+          }}
+        >
+          {filtered.length === 0 ? (
+            <div className="muted" style={{ padding: 8 }}>
+              No schools found
+            </div>
+          ) : (
+            filtered.map((s) => (
+              <button
+                key={s.id}
+                type="button"
+                className="btn"
+                style={{ width: "100%", textAlign: "left", marginBottom: 6 }}
+                onClick={() => choose(s)}
+              >
+                {s.name}
+              </button>
+            ))
+          )}
+
+          <button
+            type="button"
+            className="btn"
+            style={{ width: "100%" }}
+            onClick={() => setOpen(false)}
+          >
+            Close
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CreateRecords() {
   const navigate = useNavigate();
 
-  // step = parent | student | flag
-  const [step, setStep] = useState("parent");
+  // student → parent → flag
+  const [step, setStep] = useState("student");
   const [error, setError] = useState("");
 
-  // ======================
-  // Shared data
-  // ======================
   const [schools, setSchools] = useState([]);
-  const [parents, setParents] = useState([]);
   const [students, setStudents] = useState([]);
+  const [parents, setParents] = useState([]);
 
-  // ======================
-  // Parent form
-  // ======================
-  const [parentForm, setParentForm] = useState({
-    full_name: "",
-    phone: "",
-    ghana_card_number: "",
-    address: "",
-  });
+  const [createdStudentId, setCreatedStudentId] = useState(null);
 
-  // ======================
-  // Student form
-  // ======================
+  /* ======================
+     Student form
+  ====================== */
   const [studentForm, setStudentForm] = useState({
     first_name: "",
     last_name: "",
@@ -36,23 +104,36 @@ export default function CreateRecords() {
     date_of_birth: "",
     gender: "Male",
     current_school_id: "",
-    parent_id: "",
+    leaving_class: "",
+    student_school_id: "",
+    student_photo: null,
   });
 
-  // ======================
-  // Flag form
-  // ======================
+  /* ======================
+     Parent form
+  ====================== */
+  const [parentForm, setParentForm] = useState({
+    full_name: "",
+    phone: "",
+    ghana_card_number: "",
+    address: "",
+  });
+
+  /* ======================
+     Flag form
+  ====================== */
   const [flagForm, setFlagForm] = useState({
     student_id: "",
     parent_id: "",
     reported_by_school_id: "",
     amount_owed: "",
+    currency: "GHS",
     reason: "",
   });
 
-  // ======================
-  // Load data
-  // ======================
+  /* ======================
+     Load data
+  ====================== */
   useEffect(() => {
     loadAll();
   }, []);
@@ -61,16 +142,17 @@ export default function CreateRecords() {
     const sch = await api("/schools");
     setSchools(sch.schools || []);
 
-    const par = await api("/parents");
-    setParents(par.parents || []);
-
     const stu = await api("/students");
     setStudents(stu.students || []);
+
+    const par = await api("/parents");
+    setParents(par.parents || []);
   };
 
-  // ======================
-  // Auto-populate flag
-  // ======================
+  /* ======================
+     ✅ FIX: Auto-fill parent + reported_by_school when selecting student
+     (this prevents "Reported by school is required")
+  ====================== */
   useEffect(() => {
     if (!flagForm.student_id) return;
 
@@ -87,82 +169,68 @@ export default function CreateRecords() {
     }));
   }, [flagForm.student_id, students]);
 
-  // ======================
-  // Submit Parent
-  // ======================
-  const submitParent = async (e) => {
-    e.preventDefault();
-    setError("");
-
-    try {
-      await api("/parents", {
-        method: "POST",
-        body: JSON.stringify(parentForm),
-      });
-
-      // reload parents so new one appears
-      const par = await api("/parents");
-      setParents(par.parents || []);
-
-      alert("Parent created");
-
-      setParentForm({
-        full_name: "",
-        phone: "",
-        ghana_card_number: "",
-        address: "",
-      });
-
-      // move to next step
-      setStep("student");
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  // ======================
-  // Submit Student
-  // ======================
+  /* ======================
+     Submit Student
+  ====================== */
   const submitStudent = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      await api("/students", {
-        method: "POST",
-        body: JSON.stringify({
-          ...studentForm,
-          current_school_id: Number(studentForm.current_school_id),
-          parent_id: Number(studentForm.parent_id),
-        }),
+      const formData = new FormData();
+      Object.entries(studentForm).forEach(([k, v]) => {
+        if (v !== null && v !== undefined) formData.append(k, v);
       });
 
-      // reload students
+      const res = await api("/students", {
+        method: "POST",
+        body: formData,
+      });
+
+      setCreatedStudentId(res.student_id);
+
       const stu = await api("/students");
       setStudents(stu.students || []);
 
       alert("Student created");
-
-      setStudentForm({
-        first_name: "",
-        last_name: "",
-        other_names: "",
-        date_of_birth: "",
-        gender: "Male",
-        current_school_id: "",
-        parent_id: "",
-      });
-
-      // move to next step
-      setStep("flag");
+      setStep("parent");
     } catch (err) {
       setError(err.message);
     }
   };
 
-  // ======================
-  // Submit Flag
-  // ======================
+  /* ======================
+     Submit Parent
+  ====================== */
+  const submitParent = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    try {
+      const res = await api("/parents", {
+        method: "POST",
+        body: JSON.stringify(parentForm),
+      });
+
+      await api(`/students/${createdStudentId}/assign-parent`, {
+        method: "PATCH",
+        body: JSON.stringify({ parent_id: res.parent_id }),
+      });
+
+      alert("Parent created and linked");
+      setStep("flag");
+
+      // refresh students so the new parent_id is visible in the dropdown logic
+      const stu = await api("/students");
+      setStudents(stu.students || []);
+    } catch (err) {
+      setError(err.message);
+    }
+  };
+
+  /* ======================
+     Submit Flag
+  ====================== */
   const submitFlag = async (e) => {
     e.preventDefault();
     setError("");
@@ -173,16 +241,14 @@ export default function CreateRecords() {
         body: JSON.stringify({
           ...flagForm,
           student_id: Number(flagForm.student_id),
-          parent_id: flagForm.parent_id
-            ? Number(flagForm.parent_id)
-            : null,
+          parent_id: flagForm.parent_id ? Number(flagForm.parent_id) : null,
           reported_by_school_id: Number(flagForm.reported_by_school_id),
           amount_owed: Number(flagForm.amount_owed),
         }),
       });
 
       alert("Flag created");
-      navigate("/dashboard");
+      navigate("/flags");
     } catch (err) {
       setError(err.message);
     }
@@ -191,12 +257,104 @@ export default function CreateRecords() {
   return (
     <div className="card">
       <h2>Create Records</h2>
-
       {error && <div className="danger">{error}</div>}
 
       {/* ======================
-          PARENT STEP
-         ====================== */}
+          STUDENT
+      ====================== */}
+      {step === "student" && (
+        <form onSubmit={submitStudent}>
+          <h3>Student Details</h3>
+
+          <input
+            className="input"
+            placeholder="First Name"
+            required
+            onChange={(e) =>
+              setStudentForm({ ...studentForm, first_name: e.target.value })
+            }
+          />
+
+          <input
+            className="input"
+            placeholder="Last Name"
+            required
+            onChange={(e) =>
+              setStudentForm({ ...studentForm, last_name: e.target.value })
+            }
+          />
+
+          <input
+            className="input"
+            placeholder="Other Names"
+            onChange={(e) =>
+              setStudentForm({ ...studentForm, other_names: e.target.value })
+            }
+          />
+
+          <input
+            type="date"
+            className="input"
+            required
+            onChange={(e) =>
+              setStudentForm({ ...studentForm, date_of_birth: e.target.value })
+            }
+          />
+
+          <select
+            className="select"
+            onChange={(e) =>
+              setStudentForm({ ...studentForm, gender: e.target.value })
+            }
+          >
+            <option>Male</option>
+            <option>Female</option>
+          </select>
+
+          <SearchableSchoolSelect
+            schools={schools}
+            value={studentForm.current_school_id}
+            onChange={(val) =>
+              setStudentForm({ ...studentForm, current_school_id: val })
+            }
+          />
+
+          <input
+            className="input"
+            placeholder="Leaving Class / Grade"
+            required
+            onChange={(e) =>
+              setStudentForm({ ...studentForm, leaving_class: e.target.value })
+            }
+          />
+
+          <input
+            className="input"
+            placeholder="Student ID from Previous School"
+            onChange={(e) =>
+              setStudentForm({ ...studentForm, student_school_id: e.target.value })
+            }
+          />
+
+          <input
+            type="file"
+            accept="image/*"
+            className="input"
+            onChange={(e) =>
+              setStudentForm({
+                ...studentForm,
+                student_photo: e.target.files?.[0] || null,
+              })
+            }
+          />
+
+          <button className="btn">Save Student & Continue</button>
+        </form>
+      )}
+
+      {/* ======================
+          PARENT
+      ====================== */}
       {step === "parent" && (
         <form onSubmit={submitParent}>
           <h3>Parent Details</h3>
@@ -204,39 +362,32 @@ export default function CreateRecords() {
           <input
             className="input"
             placeholder="Full Name"
-            value={parentForm.full_name}
+            required
             onChange={(e) =>
               setParentForm({ ...parentForm, full_name: e.target.value })
             }
-            required
           />
 
           <input
             className="input"
             placeholder="Phone"
-            value={parentForm.phone}
+            required
             onChange={(e) =>
               setParentForm({ ...parentForm, phone: e.target.value })
             }
-            required
           />
 
           <input
             className="input"
             placeholder="Ghana Card Number"
-            value={parentForm.ghana_card_number}
             onChange={(e) =>
-              setParentForm({
-                ...parentForm,
-                ghana_card_number: e.target.value,
-              })
+              setParentForm({ ...parentForm, ghana_card_number: e.target.value })
             }
           />
 
           <input
             className="input"
             placeholder="Address"
-            value={parentForm.address}
             onChange={(e) =>
               setParentForm({ ...parentForm, address: e.target.value })
             }
@@ -247,121 +398,18 @@ export default function CreateRecords() {
       )}
 
       {/* ======================
-          STUDENT STEP
-         ====================== */}
-      {step === "student" && (
-        <form onSubmit={submitStudent}>
-          <h3>Student Details</h3>
-
-          <input
-            className="input"
-            placeholder="First Name"
-            value={studentForm.first_name}
-            onChange={(e) =>
-              setStudentForm({ ...studentForm, first_name: e.target.value })
-            }
-            required
-          />
-
-          <input
-            className="input"
-            placeholder="Last Name"
-            value={studentForm.last_name}
-            onChange={(e) =>
-              setStudentForm({ ...studentForm, last_name: e.target.value })
-            }
-            required
-          />
-
-          <input
-            className="input"
-            placeholder="Other Names"
-            value={studentForm.other_names}
-            onChange={(e) =>
-              setStudentForm({ ...studentForm, other_names: e.target.value })
-            }
-          />
-
-          <input
-            type="date"
-            className="input"
-            value={studentForm.date_of_birth}
-            onChange={(e) =>
-              setStudentForm({
-                ...studentForm,
-                date_of_birth: e.target.value,
-              })
-            }
-            required
-          />
-
-          <select
-            className="select"
-            value={studentForm.gender}
-            onChange={(e) =>
-              setStudentForm({ ...studentForm, gender: e.target.value })
-            }
-          >
-            <option>Male</option>
-            <option>Female</option>
-          </select>
-
-          <select
-            className="select"
-            value={studentForm.current_school_id}
-            onChange={(e) =>
-              setStudentForm({
-                ...studentForm,
-                current_school_id: e.target.value,
-              })
-            }
-            required
-          >
-            <option value="">Select School</option>
-            {schools.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            className="select"
-            value={studentForm.parent_id}
-            onChange={(e) =>
-              setStudentForm({
-                ...studentForm,
-                parent_id: e.target.value,
-              })
-            }
-            required
-          >
-            <option value="">Select Parent</option>
-            {parents.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.full_name}
-              </option>
-            ))}
-          </select>
-
-          <button className="btn">Save Student & Continue</button>
-        </form>
-      )}
-
-      {/* ======================
-          FLAG STEP
-         ====================== */}
+          FLAG
+      ====================== */}
       {step === "flag" && (
         <form onSubmit={submitFlag}>
           <h3>Flag Student</h3>
 
           <select
             className="select"
-            value={flagForm.student_id}
+            required
             onChange={(e) =>
               setFlagForm({ ...flagForm, student_id: e.target.value })
             }
-            required
           >
             <option value="">Select Student</option>
             {students.map((s) => (
@@ -374,17 +422,25 @@ export default function CreateRecords() {
           <input
             className="input"
             placeholder="Amount Owed"
-            value={flagForm.amount_owed}
+            required
             onChange={(e) =>
               setFlagForm({ ...flagForm, amount_owed: e.target.value })
             }
-            required
           />
+
+          <select
+            className="select"
+            onChange={(e) =>
+              setFlagForm({ ...flagForm, currency: e.target.value })
+            }
+          >
+            <option value="GHS">GHS</option>
+            <option value="USD">USD</option>
+          </select>
 
           <input
             className="input"
             placeholder="Reason"
-            value={flagForm.reason}
             onChange={(e) =>
               setFlagForm({ ...flagForm, reason: e.target.value })
             }
