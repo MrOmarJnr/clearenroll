@@ -11,7 +11,7 @@ export default function Students() {
   const [search, setSearch] = useState("");
 
   // =====================================================
-  // SAFE USER EXTRACTION (MATCHES DashboardLayout)
+  // SAFE USER EXTRACTION (NO SIDE EFFECTS)
   // =====================================================
   const token = localStorage.getItem("token");
 
@@ -26,11 +26,7 @@ export default function Students() {
         return null;
       }
 
-      // 🔒 NORMALIZE ID ONCE (THIS IS THE FIX)
-      return {
-        ...payload,
-        id: payload.user_id, // <-- critical
-      };
+      return payload;
     } catch {
       localStorage.removeItem("token");
       return null;
@@ -39,18 +35,16 @@ export default function Students() {
 
   const user = getUserSafe();
 
-
-
   // =====================================================
-  // LOAD STUDENTS (backend already filters by school)
+  // LOAD STUDENTS
   // =====================================================
   const load = async () => {
     setError("");
     try {
-      const data = await api("/students");
-      setStudents(data.students || []);
+      const res = await api("/students");
+      setStudents(res.students || []);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to load students");
     }
   };
 
@@ -59,22 +53,38 @@ export default function Students() {
   }, []);
 
   // =====================================================
-  // CLEAR FLAG
+  // CLEAR FLAG (BACKEND IS SOURCE OF TRUTH)
   // =====================================================
   const clearFlagForStudent = async (flagId) => {
+    if (!flagId) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to clear this student's flag?\n\nThis action will be logged and cannot be undone."
+    );
+
+    if (!confirmed) return;
+
     setError("");
     try {
       await api(`/flags/${flagId}/clear`, { method: "PATCH" });
-      await load();
+      await load(); // ⬅ cleared student leaves list
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to clear flag");
     }
   };
 
   // =====================================================
-  // SEARCH FILTER
+  // 🔑 CORE RULE
+  // ONLY STUDENTS WITH ACTIVE FLAG ARE SHOWN
   // =====================================================
-  const filteredStudents = students.filter((s) => {
+  const flaggedStudents = students.filter(
+    (s) => s.active_flag_id
+  );
+
+  // =====================================================
+  // SEARCH (APPLIED AFTER FLAG FILTER)
+  // =====================================================
+  const filteredStudents = flaggedStudents.filter((s) => {
     const term = search.toLowerCase();
     return (
       s.name?.toLowerCase().includes(term) ||
@@ -136,6 +146,10 @@ export default function Students() {
           objectFit: "cover",
           border: "1px solid #ddd",
         }}
+        onError={(e) => {
+          e.target.onerror = null;
+          e.target.style.display = "none";
+        }}
       />
     );
   };
@@ -150,15 +164,12 @@ export default function Students() {
     fontSize: "13px",
   };
 
+  // =====================================================
+  // RENDER
+  // =====================================================
   return (
     <div className="card">
-      <h2>Students</h2>
-
-      <div className="row-actions" style={{ justifyContent: "flex-end" }}>
-        <Link className="link" to="/students/add">
-          + Add Student
-        </Link>
-      </div>
+      <h2>Flagged Students</h2>
 
       {error && <div className="danger">{error}</div>}
 
@@ -187,21 +198,15 @@ export default function Students() {
 
         <tbody>
           {filteredStudents.map((s) => {
-         const isFlagged = !!s.active_flag_id;
+            const isSuperAdmin = user?.role === "SUPER_ADMIN";
+            const isSchoolAdmin = user?.role === "SCHOOL_ADMIN";
 
-          const isSuperAdmin = user?.role === "SUPER_ADMIN";
-          const isSchoolAdmin = user?.role === "SCHOOL_ADMIN";
-
-          const canClear =
-            isFlagged &&
-            user &&
-            (
+            // ✅ FINAL PERMISSION RULE
+            const canClear =
               isSuperAdmin ||
-              (
-                isSchoolAdmin &&
-                Number(s.reported_by_school_id) === Number(user.school_id)
-              )
-            );
+              (isSchoolAdmin &&
+                Number(s.reported_by_school_id) ===
+                  Number(user.school_id));
 
             return (
               <tr key={s.id}>
@@ -212,9 +217,7 @@ export default function Students() {
                 <td>{s.gender}</td>
                 <td>{s.school}</td>
                 <td>{s.parent || "-"}</td>
-                <td className={isFlagged ? "danger" : ""}>
-                  {isFlagged ? "FLAGGED" : "OK"}
-                </td>
+                <td className="danger">FLAGGED</td>
                 <td style={{ display: "flex", gap: "10px" }}>
                   <Link className="link" to={`/students/${s.id}/edit`}>
                     View
@@ -223,7 +226,9 @@ export default function Students() {
                   {canClear && (
                     <button
                       style={clearBtnStyle}
-                      onClick={() => clearFlagForStudent(s.active_flag_id)}
+                      onClick={() =>
+                        clearFlagForStudent(s.active_flag_id)
+                      }
                     >
                       Clear
                     </button>
@@ -231,12 +236,11 @@ export default function Students() {
                 </td>
               </tr>
             );
-            
           })}
 
           {!filteredStudents.length && (
             <tr>
-              <td colSpan="9">No students found.</td>
+              <td colSpan="9">No flagged students found.</td>
             </tr>
           )}
         </tbody>

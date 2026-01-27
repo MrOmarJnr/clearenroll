@@ -46,7 +46,9 @@ export default function DashboardLayout() {
       "/parents/import",
       "/allrecords",
       "/parents/:id/edit",
-       "/students/:id/edit"
+       "/students/:id/edit",
+       "/flags/audit",
+       "/dashboard/analytics"
     ],
 
     SCHOOL_ADMIN: [
@@ -66,7 +68,8 @@ export default function DashboardLayout() {
       "/parents/import",
       "/allrecords",
       "/parents/:id/edit",
-       "/students/:id/edit"
+       "/students/:id/edit",
+         "/dashboard/analytics"
     ],
 
     ADMISSIONS: [
@@ -122,7 +125,7 @@ const isAllowed = (path) => {
         </div>
 
         <nav className="sidebar-nav">
-          <NavLink to="/dashboard" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
+          <NavLink to="/dashboard" end className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
             Dashboard
           </NavLink>
 
@@ -145,7 +148,7 @@ const isAllowed = (path) => {
           )}
 
           {isAllowed("/flags") && (
-            <NavLink to="/flags" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
+            <NavLink to="/flags" end className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
               Flags in System
             </NavLink>
           )}
@@ -167,6 +170,21 @@ const isAllowed = (path) => {
              {isAllowed("/allrecords") && (
             <NavLink to="/allrecords" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
              Add & Create Record
+            </NavLink>
+          )}
+
+          
+             {isAllowed("/flags/audit") && (
+            <NavLink to="/flags/audit" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
+            Audit Logs
+            </NavLink>
+          )}
+
+          
+
+              {isAllowed("/dashboard/analytics") && (
+            <NavLink to="/dashboard/analytics" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
+            Dashboard Analytics
             </NavLink>
           )}
         </nav>

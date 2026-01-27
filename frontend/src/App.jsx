@@ -40,6 +40,12 @@ import Consents from "./pages/consents/Consents";
 import DuplicateReviews from "./pages/duplicates/DuplicateReviews";
 import Schools from "./pages/schools/Schools";
 
+/* ================= Audit ================= */
+import FlagAudit from "./pages/flags/FlagAudit";
+
+/* ================= dashboard ================= */
+import DashboardAnalytics from "./pages/dashboard/DashboardAnalytics";
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -61,6 +67,11 @@ export default function App() {
           <Route path="/dashboard" element={<Dashboard />} />
 
           
+        <Route path="/dashboard/analytics" element={<DashboardAnalytics />} />
+
+
+
+
           {/* records */}
           <Route path="/allrecords" element={<CreateRecords />} />
 
@@ -83,6 +94,9 @@ export default function App() {
           {/* Flags */}
           <Route path="/flags" element={<Flags />} />
           <Route path="/flags/create" element={<CreateFlag />} />
+
+           {/* audit */}
+           <Route path="/flags/audit" element={<FlagAudit />} />
 
           {/* System */}
           <Route path="/consents" element={<Consents />} />

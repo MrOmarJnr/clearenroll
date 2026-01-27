@@ -80,6 +80,7 @@ app.use("/dashboard", require("./routes/dashboard")(pool, authMiddleware));
 app.use("/flags", require("./routes/flags")(pool, authMiddleware));
 app.use("/verify", require("./routes/verify")(pool, authMiddleware));
 app.use("/import", require("./routes/imports")(pool, authMiddleware, upload));
+app.use("/dashboard/analytics", require("./routes/dashboard.analytics")(pool, authMiddleware));
 
 // ======================
 // Existing modules (keep as-is)
@@ -92,6 +93,13 @@ app.use("/consents", consentsRoutes(pool, authMiddleware));
 
 const disputesRoutes = require("./routes/disputes");
 app.use("/disputes", disputesRoutes(pool, authMiddleware));
+
+const flagAuditRoutes = require("./routes/flagAudit");
+app.use("/flags", flagAuditRoutes(pool, authMiddleware));
+
+app.use("/dashboard/analytics", require("./routes/dashboard.analytics")(pool, authMiddleware));
+
+
 
 // ======================
 // Start server

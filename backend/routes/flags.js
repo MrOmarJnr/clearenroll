@@ -5,9 +5,8 @@ module.exports = (pool, authMiddleware) => {
 
   /**
    * ======================================================
-   * GET ALL FLAGS
-   * - Visible to everyone (SUPER_ADMIN & SCHOOL_ADMIN)
-   * - No school filtering here by design
+   * GET ALL FLAGS (SYSTEM VIEW)
+   * - Visible to SUPER_ADMIN & SCHOOL_ADMIN
    * ======================================================
    */
   router.get("/", authMiddleware, async (req, res) => {
@@ -29,7 +28,6 @@ module.exports = (pool, authMiddleware) => {
           s.student_photo,
 
           p.full_name AS parent,
-
           sc.name AS reported_by,
           sc.location AS school_location
 
@@ -50,87 +48,121 @@ module.exports = (pool, authMiddleware) => {
   /**
    * ======================================================
    * CREATE FLAG
-   * - User creating the flag is recorded
-   * - School is explicitly stored
+   * - Records creator
+   * - Inserts AUDIT LOG (FLAGGED)
    * ======================================================
    */
- router.post("/", authMiddleware, async (req, res) => {
-  const {
-    student_id,
-    parent_id,
-    amount_owed,
-    currency,
-    reason,
-  } = req.body;
+  router.post("/", authMiddleware, async (req, res) => {
+    const {
+      student_id,
+      parent_id,
+      reported_by_school_id,
+      amount_owed,
+      currency,
+      reason,
+    } = req.body;
 
-  if (!student_id || amount_owed == null) {
-    return res.status(400).json({ message: "Missing required fields" });
-  }
+    if (!student_id || !reported_by_school_id || amount_owed == null) {
+      return res.status(400).json({ message: "Missing required fields" });
+    }
 
-  const currencyValue = currency === "USD" ? "USD" : "GHS";
+    const currencyValue = currency === "USD" ? "USD" : "GHS";
+    const conn = await pool.getConnection();
 
-  const conn = await pool.getConnection();
+    try {
+      await conn.beginTransaction();
 
-  try {
-    await conn.beginTransaction();
+      const [result] = await conn.query(
+        `
+        INSERT INTO flags
+        (
+          student_id,
+          parent_id,
+          reported_by_school_id,
+          amount_owed,
+          currency,
+          reason,
+          status,
+          created_by_user_id
+        )
+        VALUES (?, ?, ?, ?, ?, ?, 'FLAGGED', ?)
+        `,
+        [
+          student_id,
+          parent_id || null,
+          reported_by_school_id,
+          amount_owed,
+          currencyValue,
+          reason || "Unpaid fees",
+          req.user.userId,
+        ]
+      );
 
-    const [result] = await conn.query(
-      `
-      INSERT INTO flags
-      (
-        student_id,
-        parent_id,
-        reported_by_school_id,
-        amount_owed,
-        currency,
-        reason,
-        status,
-        created_by_user_id
-      )
-      VALUES (?, ?, ?, ?, ?, ?, 'FLAGGED', ?)
-      `,
-      [
-        student_id,
-        parent_id || null,
-        req.user.school_id,   // ✅ FIXED HERE
-        amount_owed,
-        currencyValue,
-        reason || "Unpaid fees",
-        req.user.userId,
-      ]
-    );
+      const flagId = result.insertId;
 
-    await conn.commit();
+      // 🔍 AUDIT LOG (FLAGGED)
+      await conn.query(
+        `
+        INSERT INTO flag_audit_logs
+        (
+          flag_id,
+          student_id,
+          parent_id,
+          school_id,
+          action,
+          amount_owed,
+          currency,
+          performed_by_user_id
+        )
+        VALUES (?, ?, ?, ?, 'FLAGGED', ?, ?, ?)
+        `,
+        [
+          flagId,
+          student_id,
+          parent_id || null,
+          reported_by_school_id,
+          amount_owed,
+          currencyValue,
+          req.user.userId,
+        ]
+      );
 
-    res.status(201).json({
-      message: "Flag created",
-      flag_id: result.insertId,
-    });
-  } catch (err) {
-    await conn.rollback();
-    console.error("FLAG CREATE ERROR:", err);
-    res.status(500).json({ message: "Failed to create flag" });
-  } finally {
-    conn.release();
-  }
-});
+      await conn.commit();
+
+      res.status(201).json({
+        message: "Flag created",
+        flag_id: flagId,
+      });
+    } catch (err) {
+      await conn.rollback();
+      console.error("FLAG CREATE ERROR:", err);
+      res.status(500).json({ message: "Failed to create flag" });
+    } finally {
+      conn.release();
+    }
+  });
 
   /**
    * ======================================================
    * CLEAR FLAG
-   * - ONLY creator OR SUPER_ADMIN
-   * - This is the core security rule
+   * - Creator OR SUPER_ADMIN
+   * - Inserts AUDIT LOG (CLEARED)
    * ======================================================
    */
   router.patch("/:id/clear", authMiddleware, async (req, res) => {
     const flagId = req.params.id;
-    const { id: userId, role } = req.user;
+    const { userId, role } = req.user;
 
     try {
       const [[flag]] = await pool.query(
         `
         SELECT
           id,
+          student_id,
+          parent_id,
+          reported_by_school_id,
+          amount_owed,
+          currency,
           created_by_user_id,
           status
         FROM flags
@@ -147,28 +179,51 @@ module.exports = (pool, authMiddleware) => {
         return res.status(400).json({ message: "Flag already cleared" });
       }
 
-      // 🔒 CORE AUTHORIZATION RULE
-     if (role === "SCHOOL_ADMIN") {
-          const [[flagSchool]] = await pool.query(
-            "SELECT reported_by_school_id FROM flags WHERE id = ?",
-            [flagId]
-          );
-
-          if (!flagSchool || Number(flagSchool.reported_by_school_id) !== Number(req.user.school_id)) {
-            return res.status(403).json({
-              message: "You can only clear flags reported by your school",
-            });
-          }
-        }
+      if (
+        role !== "SUPER_ADMIN" &&
+        Number(flag.created_by_user_id) !== Number(userId)
+      ) {
+        return res
+          .status(403)
+          .json({ message: "You can only clear flags you created" });
+      }
 
       await pool.query(
         `
         UPDATE flags
         SET status = 'CLEARED',
-            cleared_at = NOW()
+            cleared_at = NOW(),
+            cleared_by_user_id = ?
         WHERE id = ?
         `,
-        [flagId]
+        [userId, flagId]
+      );
+
+      // 🔍 AUDIT LOG (CLEARED)
+      await pool.query(
+        `
+        INSERT INTO flag_audit_logs
+        (
+          flag_id,
+          student_id,
+          parent_id,
+          school_id,
+          action,
+          amount_owed,
+          currency,
+          performed_by_user_id
+        )
+        VALUES (?, ?, ?, ?, 'CLEARED', ?, ?, ?)
+        `,
+        [
+          flagId,
+          flag.student_id,
+          flag.parent_id,
+          flag.reported_by_school_id,
+          flag.amount_owed,
+          flag.currency,
+          userId,
+        ]
       );
 
       res.json({ message: "Flag cleared successfully" });
