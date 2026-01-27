@@ -61,7 +61,6 @@ export default function DashboardLayout() {
       "/students/add",
       "/flags",
       "/flags/create",
-      "/schools",
       "/duplicates",
       "/consents",
       "/students/import",
