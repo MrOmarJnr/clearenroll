@@ -1,6 +1,20 @@
 import { useEffect, useState } from "react";
 import { api } from "../../services/api";
 import { useNavigate } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
+
+/* ======================
+   AUTH HELPERS
+====================== */
+function getUserFromToken() {
+  const token = localStorage.getItem("token");
+  if (!token) return null;
+  try {
+    return jwtDecode(token);
+  } catch {
+    return null;
+  }
+}
 
 /* ======================
    Searchable School Select
@@ -81,16 +95,22 @@ function SearchableSchoolSelect({ schools, value, onChange }) {
   );
 }
 
+/* ======================
+   MAIN COMPONENT
+====================== */
 export default function CreateRecords() {
   const navigate = useNavigate();
+  const user = getUserFromToken();
 
-  // student → parent → flag
+  const isSuperAdmin = user?.role === "SUPER_ADMIN";
+  const userSchoolId = user?.school_id || "";
+
+  // wizard steps
   const [step, setStep] = useState("student");
   const [error, setError] = useState("");
 
   const [schools, setSchools] = useState([]);
   const [students, setStudents] = useState([]);
-  const [parents, setParents] = useState([]);
 
   const [createdStudentId, setCreatedStudentId] = useState(null);
 
@@ -132,7 +152,7 @@ export default function CreateRecords() {
   });
 
   /* ======================
-     Load data
+     Load initial data
   ====================== */
   useEffect(() => {
     loadAll();
@@ -144,14 +164,22 @@ export default function CreateRecords() {
 
     const stu = await api("/students");
     setStudents(stu.students || []);
-
-    const par = await api("/parents");
-    setParents(par.parents || []);
   };
 
   /* ======================
-     ✅ FIX: Auto-fill parent + reported_by_school when selecting student
-     (this prevents "Reported by school is required")
+     🔒 Auto-assign school for school users
+  ====================== */
+  useEffect(() => {
+    if (!isSuperAdmin && userSchoolId) {
+      setStudentForm((prev) => ({
+        ...prev,
+        current_school_id: String(userSchoolId),
+      }));
+    }
+  }, [isSuperAdmin, userSchoolId]);
+
+  /* ======================
+     Auto-fill flag info when student selected
   ====================== */
   useEffect(() => {
     if (!flagForm.student_id) return;
@@ -178,8 +206,11 @@ export default function CreateRecords() {
 
     try {
       const formData = new FormData();
+
       Object.entries(studentForm).forEach(([k, v]) => {
-        if (v !== null && v !== undefined) formData.append(k, v);
+        if (v !== null && v !== undefined) {
+          formData.append(k, v);
+        }
       });
 
       const res = await api("/students", {
@@ -192,7 +223,7 @@ export default function CreateRecords() {
       const stu = await api("/students");
       setStudents(stu.students || []);
 
-      alert("Student created");
+      alert("Student created successfully");
       setStep("parent");
     } catch (err) {
       setError(err.message);
@@ -220,7 +251,6 @@ export default function CreateRecords() {
       alert("Parent created and linked");
       setStep("flag");
 
-      // refresh students so the new parent_id is visible in the dropdown logic
       const stu = await api("/students");
       setStudents(stu.students || []);
     } catch (err) {
@@ -241,27 +271,30 @@ export default function CreateRecords() {
         body: JSON.stringify({
           ...flagForm,
           student_id: Number(flagForm.student_id),
-          parent_id: flagForm.parent_id ? Number(flagForm.parent_id) : null,
+          parent_id: flagForm.parent_id
+            ? Number(flagForm.parent_id)
+            : null,
           reported_by_school_id: Number(flagForm.reported_by_school_id),
           amount_owed: Number(flagForm.amount_owed),
         }),
       });
 
-      alert("Flag created");
+      alert("Flag created successfully");
       navigate("/flags");
     } catch (err) {
       setError(err.message);
     }
   };
 
+  /* ======================
+     UI
+  ====================== */
   return (
     <div className="card">
       <h2>Create Records</h2>
       {error && <div className="danger">{error}</div>}
 
-      {/* ======================
-          STUDENT
-      ====================== */}
+      {/* ================= STUDENT ================= */}
       {step === "student" && (
         <form onSubmit={submitStudent}>
           <h3>Student Details</h3>
@@ -297,7 +330,10 @@ export default function CreateRecords() {
             className="input"
             required
             onChange={(e) =>
-              setStudentForm({ ...studentForm, date_of_birth: e.target.value })
+              setStudentForm({
+                ...studentForm,
+                date_of_birth: e.target.value,
+              })
             }
           />
 
@@ -311,20 +347,35 @@ export default function CreateRecords() {
             <option>Female</option>
           </select>
 
-          <SearchableSchoolSelect
-            schools={schools}
-            value={studentForm.current_school_id}
-            onChange={(val) =>
-              setStudentForm({ ...studentForm, current_school_id: val })
-            }
-          />
+          {isSuperAdmin ? (
+            <SearchableSchoolSelect
+              schools={schools}
+              value={studentForm.current_school_id}
+              onChange={(val) =>
+                setStudentForm({ ...studentForm, current_school_id: val })
+              }
+            />
+          ) : (
+            <input
+              className="input"
+              disabled
+              value={
+                schools.find(
+                  (s) => String(s.id) === String(userSchoolId)
+                )?.name || "Your School"
+              }
+            />
+          )}
 
           <input
             className="input"
             placeholder="Leaving Class / Grade"
             required
             onChange={(e) =>
-              setStudentForm({ ...studentForm, leaving_class: e.target.value })
+              setStudentForm({
+                ...studentForm,
+                leaving_class: e.target.value,
+              })
             }
           />
 
@@ -332,7 +383,10 @@ export default function CreateRecords() {
             className="input"
             placeholder="Student ID from Previous School"
             onChange={(e) =>
-              setStudentForm({ ...studentForm, student_school_id: e.target.value })
+              setStudentForm({
+                ...studentForm,
+                student_school_id: e.target.value,
+              })
             }
           />
 
@@ -352,9 +406,7 @@ export default function CreateRecords() {
         </form>
       )}
 
-      {/* ======================
-          PARENT
-      ====================== */}
+      {/* ================= PARENT ================= */}
       {step === "parent" && (
         <form onSubmit={submitParent}>
           <h3>Parent Details</h3>
@@ -381,7 +433,10 @@ export default function CreateRecords() {
             className="input"
             placeholder="Ghana Card Number"
             onChange={(e) =>
-              setParentForm({ ...parentForm, ghana_card_number: e.target.value })
+              setParentForm({
+                ...parentForm,
+                ghana_card_number: e.target.value,
+              })
             }
           />
 
@@ -397,9 +452,7 @@ export default function CreateRecords() {
         </form>
       )}
 
-      {/* ======================
-          FLAG
-      ====================== */}
+      {/* ================= FLAG ================= */}
       {step === "flag" && (
         <form onSubmit={submitFlag}>
           <h3>Flag Student</h3>

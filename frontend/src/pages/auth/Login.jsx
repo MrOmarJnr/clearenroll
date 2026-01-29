@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+
 import "../../assets/css/util.css";
 import "../../assets/css/main.css";
+import "../../assets/css/auth-layout.css";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,13 +16,13 @@ export default function Login() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // ✅ NEW
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
 
-    const API_URL = import.meta.env.VITE_API_URL;
+  const API_URL = import.meta.env.VITE_API_URL;
+
   useEffect(() => {
     const inputs = document.querySelectorAll(".input100");
-
     inputs.forEach((input) => {
       if (input.value.trim() !== "") {
         input.classList.add("has-val");
@@ -35,7 +37,7 @@ export default function Login() {
     setError("");
 
     try {
-        const res = await fetch(`${API_URL}/auth/login`, {
+      const res = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
@@ -43,12 +45,10 @@ export default function Login() {
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.message || "Login failed");
-      }
+      if (!res.ok) throw new Error(data.message || "Login failed");
 
       localStorage.setItem("token", data.token);
-      jwtDecode(data.token); // validate token
+      jwtDecode(data.token);
       navigate("/dashboard", { replace: true });
 
     } catch (err) {
@@ -57,73 +57,75 @@ export default function Login() {
   };
 
   return (
-    <div className="limiter">
-      <div className="container-login100">
-        <div className="wrap-login100">
+    <div className="auth-container">
 
-          <form className="login100-form validate-form" onSubmit={handleLogin}>
-            <span className="login100-form-title p-b-26">
-              Clear Enroll System
+      {/* LEFT PANEL */}
+      <div className="auth-left">
+        <h2> Clear Enroll School Portal</h2>
+        <p  style={{ color: "#f4f4f4" }}>Sign in to your account</p>
+
+        <form className="login100-form" onSubmit={handleLogin}>
+
+          <div className="wrap-input100">
+            <input
+              className="input100"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+            <span className="focus-input100" data-placeholder="Email or Username"></span>
+          </div>
+
+          <div className="wrap-input100">
+            <span
+              className="btn-show-pass"
+              onClick={() => setShowPassword(!showPassword)}
+            >
+              <i className={`zmdi ${showPassword ? "zmdi-eye-off" : "zmdi-eye"}`}></i>
             </span>
 
-            {/* Email */}
-            <div className="wrap-input100 validate-input">
-              <input
-                className="input100"
-                type="email"
-                name="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-              <span className="focus-input100" data-placeholder="Email"></span>
+            <input
+              className="input100"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <span className="focus-input100" data-placeholder="Password"></span>
+          </div>
+
+          {error && (
+            <div style={{ color: "#ffd34e", marginBottom: 15 }}>
+              {error}
             </div>
+          )}
 
-            {/* Password */}
-            <div className="wrap-input100 validate-input">
-              <span
-                className="btn-show-pass"
-                onClick={() => setShowPassword((prev) => !prev)}
-                style={{ cursor: "pointer" }}
-              >
-                <i className={`zmdi ${showPassword ? "zmdi-eye-off" : "zmdi-eye"}`}></i>
-              </span>
+          <button className="login100-form-btn" type="submit"  >
+            Sign in to your account
+          </button>
 
-              <input
-                className="input100"
-                type={showPassword ? "text" : "password"} // ✅ toggle
-                name="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-              <span className="focus-input100" data-placeholder="Password"></span>
-            </div>
+          <div className="auth-links">
+            <a href="/register">Register Now</a>
+          </div>
 
-            {error && (
-              <div style={{ color: "red", textAlign: "center", marginTop: 10 }}>
-                {error}
-              </div>
-            )}
-
-            <div className="container-login100-form-btn">
-              <div className="wrap-login100-form-btn">
-                <div className="login100-form-bgbtn"></div>
-                <button className="login100-form-btn" type="submit">
-                  Login
-                </button>
-              </div>
-            </div>
-
-            <div className="text-center p-t-115">
-              <span className="txt1">Don’t have an account?</span>
-              <a className="txt2" href="/register">Sign Up</a>
-              
-            </div>
-
-          </form>
+        </form>
+         <div className="auth-right-overlay">
+          Be on the Safe Side
         </div>
       </div>
+
+      {/* RIGHT IMAGE PANEL */}
+      <div
+        className="auth-right"
+        style={{
+          backgroundImage:
+            "url('https://images.unsplash.com/photo-1600880292203-757bb62b4baf')",
+        }}
+      >
+       
+      </div>
+
     </div>
   );
 }

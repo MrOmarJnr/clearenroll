@@ -142,6 +142,53 @@ module.exports = (pool, authMiddleware) => {
     }
   });
 
+
+  // GET single flag details (for View modal)
+router.get("/:id", authMiddleware, async (req, res) => {
+  try {
+    const flagId = Number(req.params.id);
+
+    const [rows] = await pool.query(
+      `
+      SELECT
+        f.id,
+        f.student_id,
+        f.parent_id,
+        f.amount_owed,
+        f.currency,
+        f.reason,
+        f.status,
+        sc.name AS reported_by,
+        f.reported_by_school_id
+      FROM flags f
+      JOIN schools sc ON sc.id = f.reported_by_school_id
+      WHERE f.id = ?
+      LIMIT 1
+      `,
+      [flagId]
+    );
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "Flag not found" });
+    }
+
+    const flag = rows[0];
+
+    // 🔒 Optional: school scoping for SCHOOL_ADMIN
+    if (req.user.role === "SCHOOL_ADMIN") {
+      if (Number(flag.reported_by_school_id) !== Number(req.user.school_id)) {
+        return res.status(403).json({ message: "Forbidden" });
+      }
+    }
+
+    res.json({ flag });
+  } catch (err) {
+    console.error("GET FLAG ERROR:", err);
+    res.status(500).json({ message: "Failed to load flag" });
+  }
+});
+
+
   /**
    * ======================================================
    * CLEAR FLAG
