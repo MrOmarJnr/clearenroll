@@ -6,6 +6,8 @@ import "../../assets/css/util.css";
 import "../../assets/css/main.css";
 import "../../assets/css/auth-layout.css";
 
+import backgroundImage from "../../assets/images/backgroundimg.jpeg";
+
 export default function Login() {
   const navigate = useNavigate();
   const existingToken = localStorage.getItem("token");
@@ -44,13 +46,11 @@ export default function Login() {
       });
 
       const data = await res.json();
-
       if (!res.ok) throw new Error(data.message || "Login failed");
 
       localStorage.setItem("token", data.token);
       jwtDecode(data.token);
       navigate("/dashboard", { replace: true });
-
     } catch (err) {
       setError(err.message);
     }
@@ -61,11 +61,10 @@ export default function Login() {
 
       {/* LEFT PANEL */}
       <div className="auth-left">
-        <h2> Clear Enroll School Portal</h2>
-        <p  style={{ color: "#f4f4f4" }}>Sign in to your account</p>
+        <h2>Clear Enroll School Portal</h2>
+        <p style={{ color: "#f4f4f4" }}>Sign in to your account</p>
 
         <form className="login100-form" onSubmit={handleLogin}>
-
           <div className="wrap-input100">
             <input
               className="input100"
@@ -74,7 +73,10 @@ export default function Login() {
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <span className="focus-input100" data-placeholder="Email or Username"></span>
+            <span
+              className="focus-input100"
+              data-placeholder="Email or Username"
+            />
           </div>
 
           <div className="wrap-input100">
@@ -82,7 +84,11 @@ export default function Login() {
               className="btn-show-pass"
               onClick={() => setShowPassword(!showPassword)}
             >
-              <i className={`zmdi ${showPassword ? "zmdi-eye-off" : "zmdi-eye"}`}></i>
+              <i
+                className={`zmdi ${
+                  showPassword ? "zmdi-eye-off" : "zmdi-eye"
+                }`}
+              ></i>
             </span>
 
             <input
@@ -92,7 +98,10 @@ export default function Login() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
-            <span className="focus-input100" data-placeholder="Password"></span>
+            <span
+              className="focus-input100"
+              data-placeholder="Password"
+            />
           </div>
 
           {error && (
@@ -101,31 +110,44 @@ export default function Login() {
             </div>
           )}
 
-          <button className="login100-form-btn" type="submit"  >
+          <button className="login100-form-btn" type="submit">
             Sign in to your account
           </button>
 
           <div className="auth-links">
             <a href="/register">Register Now</a>
           </div>
-
         </form>
-         <div className="auth-right-overlay">
-          Be on the Safe Side
+
+        {/* FOOTER */}
+
+         <div className="auth-footer-disclaimer">
+        
+          By signing in to this software you are agreeing to the use and consent of the contents on the software. 
+            Any misuse of the information provided on this software is liable to legal actions.
+        
         </div>
+
+        <div className="auth-footer">
+          <span className="auth-disclaimer">
+            Authorized institutional use only.
+          </span>
+
+          <span className="auth-brand">
+            Powered by <strong>LEF Signature</strong>
+          </span>
+        </div>
+
+       
+
+       
       </div>
 
       {/* RIGHT IMAGE PANEL */}
       <div
         className="auth-right"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1600880292203-757bb62b4baf')",
-        }}
-      >
-       
-      </div>
-
+        style={{ backgroundImage: `url(${backgroundImage})` }}
+      />
     </div>
   );
 }

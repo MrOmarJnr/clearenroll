@@ -1,11 +1,26 @@
-import { NavLink, Outlet, useNavigate, useLocation } from "react-router-dom";
-import "../assets/css/dashboard.css";
+import { useEffect, useMemo, useState } from "react";
+import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+
+
+// ✅ Use your AdminHub CSS (paste your provided CSS into this file or create style.css)
+import "../assets/css/new_style.css";
 
 export default function DashboardLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  const [profileOpen, setProfileOpen] = useState(false);
+
+  // ====== UI state (AdminHub behaviors) ======
+  const [sidebarHidden, setSidebarHidden] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [darkMode, setDarkMode] = useState(() => {
+    // optional: persist (won’t break anything if not present)
+    return localStorage.getItem("ce_dark_mode") === "1";
+  });
+
+  // ====== AUTH + RBAC (KEEP YOUR EXISTING LOGIC) ======
   const token = localStorage.getItem("token");
 
   const getUserSafe = () => {
@@ -28,201 +43,302 @@ export default function DashboardLayout() {
   const user = getUserSafe();
   const role = user?.role;
 
-  const ROLE_ALLOW = {
-    SUPER_ADMIN: [
-      "/dashboard",
-      "/verify",
-      "/verify/enrollment",
-      "/parents",
-      "/parents/add",
-      "/students",
-      "/students/add",
-      "/flags",
-      "/flags/create",
-      "/schools",
-      "/duplicates",
-      "/consents",
-      "/students/import",
-      "/parents/import",
-      "/allrecords",
-      "/parents/:id/edit",
-       "/students/:id/edit",
-       "/flags/audit",
-       "/dashboard/analytics"
-    ],
+  const ROLE_ALLOW = useMemo(
+    () => ({
+      SUPER_ADMIN: [
+        "/dashboard",
+        "/verify",
+        "/verify/enrollment",
+        "/parents",
+        "/parents/add",
+        "/students",
+        "/students/add",
+        "/flags",
+        "/flags/create",
+        "/schools",
+        "/duplicates",
+        "/consents",
+        "/students/import",
+        "/parents/import",
+        "/allrecords",
+        "/parents/:id/edit",
+        "/students/:id/edit",
+        "/flags/audit",
+        "/dashboard/analytics",
+      ],
 
-    SCHOOL_ADMIN: [
-     "/dashboard",
-      "/verify",
-      "/verify/enrollment",
-      "/parents",
-      "/parents/add",
-      "/students",
-      "/students/add",
-      "/flags",
-      "/flags/create",
-      "/duplicates",
-      "/consents",
-      "/students/import",
-      "/parents/import",
-      "/allrecords",
-      "/parents/:id/edit",
-       "/students/:id/edit",
-         "/dashboard/analytics"
-    ],
+      SCHOOL_ADMIN: [
+        "/dashboard",
+        "/verify",
+        "/verify/enrollment",
+        "/parents",
+        "/parents/add",
+        "/students",
+        "/students/add",
+        "/flags",
+        "/flags/create",
+        "/duplicates",
+        "/consents",
+        "/students/import",
+        "/parents/import",
+        "/allrecords",
+        "/parents/:id/edit",
+        "/students/:id/edit",
+        "/dashboard/analytics",
+      ],
 
-    ADMISSIONS: [
-      "/dashboard",
-      "/verify",
-      "/verify/enrollment",
-      "/students",
-      "/students/add",
-      "/parents",
-      "/parents/add",
-    ],
+      ADMISSIONS: [
+        "/dashboard",
+        "/verify",
+        "/verify/enrollment",
+        "/students",
+        "/students/add",
+        "/parents",
+        "/parents/add",
+      ],
 
-    TEST_RECEIVING_SCHOOL: ["/dashboard", "/verify", "/verify/enrollment", "/students"],
+      TEST_RECEIVING_SCHOOL: ["/dashboard", "/verify", "/verify/enrollment", "/students"],
 
-    BURSAR: ["/dashboard", "/verify", "/flags", "/flags/create", "/students", "/students/add"],
-  };
+      BURSAR: ["/dashboard", "/verify", "/flags", "/flags/create", "/students", "/students/add"],
+    }),
+    []
+  );
 
   const allowedPaths = role ? ROLE_ALLOW[role] || ["/dashboard"] : ["/dashboard"];
-const isAllowed = (path) => {
-  return allowedPaths.some((allowed) => {
-    if (allowed.includes(":")) {
-      // convert /parents/:id/edit → regex
-      const regex = new RegExp(
-        "^" + allowed.replace(/:[^/]+/g, "[^/]+") + "$"
-      );
-      return regex.test(path);
-    }
-    return allowed === path;
-  });
-};
 
-  if (role && location?.pathname && !isAllowed(location.pathname)) {
-    if (location.pathname !== "/dashboard") {
-      navigate("/dashboard", { replace: true });
+  const isAllowed = (path) => {
+    return allowedPaths.some((allowed) => {
+      if (allowed.includes(":")) {
+        const regex = new RegExp("^" + allowed.replace(/:[^/]+/g, "[^/]+") + "$");
+        return regex.test(path);
+      }
+      return allowed === path;
+    });
+  };
+
+  // keep your redirect behavior
+  useEffect(() => {
+    if (role && location?.pathname && !isAllowed(location.pathname)) {
+      if (location.pathname !== "/dashboard") {
+        navigate("/dashboard", { replace: true });
+      }
     }
-  }
+  }, [role, location?.pathname]);
 
   const logout = () => {
     localStorage.removeItem("token");
     navigate("/login", { replace: true });
   };
 
-  return (
-    <div className="app-shell">
-      {/* SIDEBAR */}
-      <aside className="sidebar">
-        <div className="sidebar-brand">
-          <div className="sidebar-logo">CE</div>
-          <div className="sidebar-brand-text">
-            <div className="sidebar-title">Clear Enroll</div>
-            <div className="sidebar-subtitle">Registry System</div>
-          </div>
-        </div>
+  // ====== AdminHub responsive defaults (from script.js) ======
+  useEffect(() => {
+    const applyResponsiveDefaults = () => {
+      if (window.innerWidth < 768) {
+        setSidebarHidden(true);
+      }
+      if (window.innerWidth > 576) {
+        setMobileSearchOpen(false);
+      }
+    };
 
-        <nav className="sidebar-nav">
-          <NavLink to="/dashboard" end className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-            Dashboard
-          </NavLink>
+    applyResponsiveDefaults();
+
+    const onResize = () => {
+      if (window.innerWidth > 576) {
+        setMobileSearchOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+
+  // ====== Dark mode (AdminHub) ======
+  useEffect(() => {
+    if (darkMode) {
+      document.body.classList.add("dark");
+      localStorage.setItem("ce_dark_mode", "1");
+    } else {
+      document.body.classList.remove("dark");
+      localStorage.setItem("ce_dark_mode", "0");
+    }
+  }, [darkMode]);
+
+  const profileInitial =
+    user?.full_name?.trim()?.[0]?.toUpperCase() ||
+    user?.email?.trim()?.[0]?.toUpperCase() ||
+    "U";
+
+  // helper to style active li like AdminHub
+  const sideLinkClass = ({ isActive }) => (isActive ? "active" : "");
+
+  return (
+    <>
+      {/* SIDEBAR */}
+      <section id="sidebar" className={sidebarHidden ? "hide" : ""}>
+        <a href="#" className="brand" onClick={(e) => e.preventDefault()}>
+          <i
+            className="bx bx-menu"
+            onClick={() => setSidebarHidden((s) => !s)}
+          />          
+          <span className="text">ClearEnroll</span>
+        </a>
+
+        <ul className="side-menu top">
+          <li className={sideLinkClass({ isActive: location.pathname === "/dashboard" })}>
+            <NavLink to="/dashboard" end>
+              <i className="bx bxs-dashboard" />
+              <span className="text">Dashboard</span>
+            </NavLink>
+          </li>
 
           {isAllowed("/verify") && (
-            <NavLink to="/verify" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-              Verify New Student
-            </NavLink>
-          )}
-
-          {isAllowed("/parents") && (
-            <NavLink to="/parents" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-              Parents
-            </NavLink>
+            <li className={sideLinkClass({ isActive: location.pathname.startsWith("/verify") })}>
+              <NavLink to="/verify">
+                <i className="bx bxs-check-shield" />
+                <span className="text">Verify</span>
+              </NavLink>
+            </li>
           )}
 
           {isAllowed("/students") && (
-            <NavLink to="/students" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-             My Students / Debtors List
-            </NavLink>
+            <li className={sideLinkClass({ isActive: location.pathname.startsWith("/students") })}>
+              <NavLink to="/students">
+                <i className="bx bxs-group" />
+                <span className="text">My Debtors</span>
+              </NavLink>
+            </li>
+          )}
+
+          {isAllowed("/parents") && (
+            <li className={sideLinkClass({ isActive: location.pathname.startsWith("/parents") })}>
+              <NavLink to="/parents">
+                <i className="bx bxs-user-detail" />
+                <span className="text">Parents</span>
+              </NavLink>
+            </li>
           )}
 
           {isAllowed("/flags") && (
-            <NavLink to="/flags" end className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-              Flags in System
-            </NavLink>
+            <li className={sideLinkClass({ isActive: location.pathname.startsWith("/flags") })}>
+              <NavLink to="/flags">
+                <i className="bx bxs-flag-alt" />
+                <span className="text">Flags</span>
+              </NavLink>
+            </li>
+          )}
+
+          {isAllowed("/duplicates") && (
+            <li className={sideLinkClass({ isActive: location.pathname.startsWith("/duplicates") })}>
+              <NavLink to="/duplicates">
+                <i className="bx bxs-copy" />
+                <span className="text">Duplicates</span>
+              </NavLink>
+            </li>
           )}
 
           {isAllowed("/schools") && (
-            <NavLink to="/schools" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-              Schools
-            </NavLink>
+            <li className={sideLinkClass({ isActive: location.pathname.startsWith("/schools") })}>
+              <NavLink to="/schools">
+                <i className="bx bxs-school" />
+                <span className="text">Schools</span>
+              </NavLink>
+            </li>
           )}
 
-     
-          {isAllowed("/duplicates") && (
-            <NavLink to="/duplicates" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-              Duplicates
-            </NavLink>
+          {isAllowed("/consents") && (
+            <li className={sideLinkClass({ isActive: location.pathname.startsWith("/consents") })}>
+              <NavLink to="/consents">
+                <i className="bx bxs-lock-alt" />
+                <span className="text">Consents</span>
+              </NavLink>
+            </li>
           )}
 
-
-             {isAllowed("/allrecords") && (
-            <NavLink to="/allrecords" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-             Add & Create Record
-            </NavLink>
+          {isAllowed("/allrecords") && (
+            <li className={sideLinkClass({ isActive: location.pathname.startsWith("/allrecords") })}>
+              <NavLink to="/allrecords">
+                <i className="bx bxs-plus-circle" />
+                <span className="text">Create Record</span>
+              </NavLink>
+            </li>
           )}
 
-          
-             {isAllowed("/flags/audit") && (
-            <NavLink to="/flags/audit" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-            Audit Logs
-            </NavLink>
+          {isAllowed("/flags/audit") && (
+            <li className={sideLinkClass({ isActive: location.pathname.startsWith("/flags/audit") })}>
+              <NavLink to="/flags/audit">
+                <i className="bx bxs-book" />
+                <span className="text">Audit Logs</span>
+              </NavLink>
+            </li>
           )}
 
-          
-
-              {isAllowed("/dashboard/analytics") && (
-            <NavLink to="/dashboard/analytics" className={({ isActive }) => (isActive ? "sidelink active" : "sidelink")}>
-            Dashboard Analytics
-            </NavLink>
+          {isAllowed("/dashboard/analytics") && (
+            <li className={sideLinkClass({ isActive: location.pathname.startsWith("/dashboard/analytics") })}>
+              <NavLink to="/dashboard/analytics">
+                <i className="bx bxs-doughnut-chart" />
+                <span className="text">Analytics</span>
+              </NavLink>
+            </li>
           )}
-        </nav>
+        </ul>
 
-        <div className="sidebar-footer">
-          {user && (
-            <div className="user-chip">
-              <div className="user-avatar">{String(user.email || "U").slice(0, 1).toUpperCase()}</div>
-              <div className="user-meta">
-                <div className="user-email">{user.email}</div>
-                <div className="user-role">{user.role}</div>
-              </div>
-            </div>
-          )}
+        <ul className="side-menu">
+          <li>
+            <a href="#" onClick={(e) => { e.preventDefault(); logout(); }} className="logout">
+              <i className="bx bxs-log-out-circle" />
+              <span className="text">Logout</span>
+            </a>
+          </li>
+        </ul>
+      </section>
 
-          {/* Logout should NOT look like the primary blue action */}
-          <button className="btn btn-secondary btn-block" onClick={logout}>
-            Logout
-          </button>
-        </div>
-      </aside>
+      {/* CONTENT */}
+      <section id="content">
+        {/* NAVBAR */}
+    <nav>
+  {/* LEFT */}
+  
 
-      {/* MAIN */}
-      <div className="main">
-        <header className="topbar">
-          <div className="topbar-title">
-            <div className="topbar-h1">Clear Enroll System</div>
-            {user && (
-              <div className="topbar-h2">
-                Logged in as <strong>{user.email}</strong> ({user.role})
-              </div>
-            )}
+  {/* SPACER */}
+  <div style={{ flex: 1 }} />
+
+  {/* RIGHT */}
+  <div className="nav-right">
+
+
+    <div className="profile-wrapper">
+      <div
+        className="profile"
+        onClick={() => setProfileOpen((v) => !v)}
+      >
+        <div className="avatar">{profileInitial}</div>
+        <span className="profile-name-inline">
+          {user?.full_name || "User"}
+        </span>
+      </div>
+
+      {profileOpen && (
+        <div className="profile-dropdown">
+          <div className="profile-name">
+            {user?.full_name || user?.email}
+            <small>{role}</small>
           </div>
-        </header>
+          <button onClick={logout}>Logout</button>
+        </div>
+      )}
+    </div>
+  </div>
+</nav>
 
-        <main className="content">
+
+
+
+        {/* MAIN */}
+        <main>
           <Outlet />
         </main>
-      </div>
-    </div>
+      </section>
+    </>
   );
 }

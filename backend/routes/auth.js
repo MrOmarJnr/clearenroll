@@ -53,7 +53,7 @@ module.exports = (pool) => {
 
     const [rows] = await pool.query(
       `
-      SELECT u.id, u.email, u.password_hash, u.school_id, r.name AS role
+      SELECT u.id, u.email, u.password_hash, u.school_id,u.full_name, r.name AS role
       FROM users u
       JOIN roles r ON r.id = u.role_id
       WHERE u.email = ?
@@ -77,6 +77,7 @@ module.exports = (pool) => {
       email: user.email,
       role: user.role,
       school_id: user.school_id || null,
+      full_name: user.full_name || null,
     });
 
     res.json({ token });

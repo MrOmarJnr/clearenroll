@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { api } from "../../services/api";
 import { Link } from "react-router-dom";
+import { jwtDecode } from "jwt-decode";
 
 import FlagStatusPie from "../../components/FlagStatusPie";
 import MonthlyBarChart from "../../components/MonthlyBarChart";
@@ -47,20 +48,11 @@ export default function Dashboard() {
     if (!myFlagActivity.length) return;
 
     const headers = ["Student", "Parent", "School", "Amount", "Status", "My Action"];
-    const rows = myFlagActivity.map((f) => [
-      f.student,
-      f.parent,
-      f.school,
-      f.amount_owed,
-      f.status,
-      f.my_action,
-    ]);
+    const rows = myFlagActivity.map((f) => [f.student, f.parent, f.school, f.amount_owed, f.status, f.my_action]);
 
     const csv =
       [headers, ...rows]
-        .map((r) =>
-          r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")
-        )
+        .map((r) => r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(","))
         .join("\n");
 
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
@@ -74,178 +66,214 @@ export default function Dashboard() {
     URL.revokeObjectURL(url);
   };
 
-  const badgeClass = (status) => {
-    if (status === "FLAGGED") return "badge badge-danger";
-    if (status === "CLEARED") return "badge badge-success";
-    return "badge";
+  const statusClass = (status) => {
+    // Map your statuses into AdminHub badge styles
+    if (status === "CLEARED") return "status completed";
+    if (status === "FLAGGED") return "status pending";
+    return "status process";
   };
 
-  if (!cards) return <div className="card">Loading...</div>;
+  // get the user from token (keep your logic)
+  const token = localStorage.getItem("token");
+
+  const getUserSafe = () => {
+    try {
+      if (!token) return null;
+      const payload = jwtDecode(token);
+
+      if (payload?.exp && Date.now() >= payload.exp * 1000) {
+        localStorage.removeItem("token");
+        return null;
+      }
+
+      return payload;
+    } catch {
+      localStorage.removeItem("token");
+      return null;
+    }
+  };
+
+  const user = getUserSafe();
+
+  if (!cards) return <div>Loading...</div>;
 
   return (
     <>
-      {/* ================= PAGE HEADER ================= */}
-      <div className="page-head">
-        <div>
-          <h2 className="page-title">Dashboard</h2>
-          <div className="page-subtitle">
-            System overview & activity snapshot
-          </div>
+      {/* HEADER (AdminHub) */}
+      <div className="head-title">
+        <div className="left">
+          <h1>Dashboard</h1>
+          {user ? (
+            <div style={{ marginTop: 10, color: "var(--dark)" }}>
+              Hello <strong>{user.full_name}</strong>,
+              <br /> welcome to your dashboard
+            </div>
+          ) : null}
         </div>
+
+     
       </div>
 
-      {/* ================= KPI CARDS ================= */}
-      <div className="grid4">
-        <div className="card stat-card">
-          <div className="stat-title">Schools</div>
-          <div className="stat-value">{cards.schools}</div>
-        </div>
+      {/* KPI CARDS (AdminHub box-info) */}
+     <ul className="box-info">
+  <li className="kpi schools">
+    <div className="icon">
+      <i className="bx bxs-school" />
+    </div>
+    <div className="text">
+      <h3>{cards.schools}</h3>
+      <p>Schools</p>
+    </div>
+  </li>
 
-        <div className="card stat-card">
-          <div className="stat-title">Parents</div>
-          <div className="stat-value">{cards.parents}</div>
-        </div>
+  <li className="kpi parents">
+    <div className="icon">
+      <i className="bx bxs-user-detail" />
+    </div>
+    <div className="text">
+      <h3>{cards.parents}</h3>
+      <p>Parents</p>
+    </div>
+  </li>
 
-        <div className="card stat-card">
-          <div className="stat-title">Students</div>
-          <div className="stat-value">{cards.students}</div>
-        </div>
+  <li className="kpi students">
+    <div className="icon">
+      <i className="bx bxs-group" />
+    </div>
+    <div className="text">
+      <h3>{cards.students}</h3>
+      <p>Students</p>
+    </div>
+  </li>
 
-        <div className="card stat-card">
-          <div className="stat-title">Flagged</div>
-          <div className="stat-value danger">{cards.flagged}</div>
-        </div>
-      </div>
+  <li className="kpi flagged">
+    <div className="icon">
+      <i className="bx bxs-flag-alt" />
+    </div>
+    <div className="text">
+      <h3>{cards.flagged}</h3>
+      <p>Flagged</p>
+    </div>
+  </li>
 
-      {/* ================= PENDING DUPLICATES ================= */}
-      <div className="grid4" style={{ marginTop: 12 }}>
-        <Link
-          to="/duplicates"
-          className="card stat-card clickable"
-          style={{ textDecoration: "none" }}
-        >
-          <div className="stat-title">Pending Duplicates</div>
-          <div
-            className={
-              "stat-value " +
-              (Number(cards.pendingDuplicates) > 0 ? "danger" : "")
-            }
-          >
-            {cards.pendingDuplicates ?? 0}
-          </div>
-          <div className="hint">Review potential duplicates</div>
-        </Link>
-      </div>
+  <li className="kpi duplicates">
+    <div className="icon">
+      <i className="bx bxs-copy" />
+    </div>
+    <div className="text">
+      <h3>{cards.pendingDuplicates ?? 0}</h3>
+      <p>Pending Duplicates</p>
+    </div>
+  </li>
+</ul>
 
-      {/* ================= ANALYTICS (CONSTRAINED) ================= */}
-      <div
-        className="card"
-        style={{
-          marginTop: 16,
-          maxWidth: "1920px",
-          marginLeft: "auto",
-          marginRight: "auto",
-        }}
-      >
-        <div className="card-head">
-          <h3 className="card-title">Financial & Compliance Analytics</h3>
-          <div className="card-actions">
-            <Link className="link-soft" to="/dashboard/analytics">
+
+      {/* ANALYTICS SECTION (still AdminHub style) */}
+      <div className="table-data" style={{ marginTop: 24 }}>
+        <div className="order" style={{ flexBasis: "800px" }}>
+          <div className="head">
+            <h3>Financial & Compliance Analytics</h3>
+            <Link to="/dashboard/analytics" style={{ color: "var(--blue)", fontWeight: 600 }}>
               Open full analytics
             </Link>
           </div>
-        </div>
 
-        {!analytics ? (
-          <div className="muted">Loading analytics...</div>
-        ) : (
-          <>
-            {/* Row 1 */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-              }}
-            >
-              <div className="card" style={{ margin: 0 }}>
-                <h4 style={{ marginBottom: 8 }}>
-                  Flagged vs Cleared (Amount)
-                </h4>
+          {!analytics ? (
+            <div style={{ color: "var(--dark-grey)" }}>Loading analytics...</div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, minWidth: 520 }}>
+              <div style={{ background: "var(--grey)", borderRadius: 12, padding: 16 }}>
+                <h4 style={{ marginBottom: 8 }}>Flagged vs Cleared</h4>
                 <FlagStatusPie
-                  data={
-                    analytics.pieTotals || {
-                      flagged_amount: 0,
-                      cleared_amount: 0,
-                    }
-                  }
+                  data={analytics.pieTotals || { flagged_amount: 0, cleared_amount: 0 }}
                 />
               </div>
 
-              <div className="card" style={{ margin: 0 }}>
+              <div style={{ background: "var(--grey)", borderRadius: 12, padding: 16 }}>
                 <h4 style={{ marginBottom: 8 }}>By Currency</h4>
                 <CurrencyBarChart data={analytics.currencyBar || []} />
               </div>
-            </div>
 
-            {/* Row 2 */}
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "1fr 1fr",
-                gap: 16,
-                marginTop: 16,
-              }}
-            >
-              <div className="card" style={{ margin: 0 }}>
+              <div style={{ background: "var(--grey)", borderRadius: 12, padding: 16 }}>
                 <h4 style={{ marginBottom: 8 }}>Monthly Overview</h4>
                 <MonthlyBarChart data={analytics.monthlyBar || []} />
               </div>
 
-              <div className="card" style={{ margin: 0 }}>
-                <h4 style={{ marginBottom: 8 }}>
-                  Debt Trend (Flagged vs Cleared)
-                </h4>
+              <div style={{ background: "var(--grey)", borderRadius: 12, padding: 16 }}>
+                <h4 style={{ marginBottom: 8 }}>Debt Trend (Flagged vs Cleared)</h4>
                 <DebtTrendChart data={analytics.trendData || []} />
               </div>
             </div>
-          </>
-        )}
+          )}
+        </div>
+
+        {/* Quick actions / exports (use AdminHub todo style) */}
+        <div className="todo">
+          <div className="head">
+            <h3>Quick Actions</h3>
+            <i className="bx bx-filter" />
+          </div>
+
+          <ul className="todo-list">
+            <li className="not-completed">
+              <p>
+                <Link to="/flags" style={{ color: "inherit" }}>
+                  Review Flags
+                </Link>
+              </p>
+              <i className="bx bx-right-arrow-alt" />
+            </li>
+
+            <li className="not-completed">
+              <p>
+                <Link to="/duplicates" style={{ color: "inherit" }}>
+                  Review Duplicates
+                </Link>
+              </p>
+              <i className="bx bx-right-arrow-alt" />
+            </li>
+
+            <li className="completed">
+              <p onClick={exportMyActivityCSV} style={{ cursor: "pointer" }}>
+                Export My Flag Activity (CSV)
+              </p>
+              <i className="bx bx-download" />
+            </li>
+          </ul>
+        </div>
       </div>
 
-      {/* ================= RECENT FLAGS ================= */}
-      <div className="card">
-        <div className="card-head">
-          <h3 className="card-title">Recent Flags</h3>
-          <div className="card-actions">
-            <Link className="link-soft" to="/flags">
+      {/* TABLES (AdminHub table-data layout) */}
+      <div className="table-data">
+        {/* Recent Flags */}
+        <div className="order">
+          <div className="head">
+            <h3>Recent Flags</h3>
+            <Link to="/flags" style={{ color: "var(--blue)", fontWeight: 600 }}>
               View all
             </Link>
           </div>
-        </div>
 
-        <div className="table-wrap">
-          <table className="table">
+          <table>
             <thead>
               <tr>
                 <th>Student</th>
                 <th>Parent</th>
                 <th>Reported By</th>
-                <th className="td-left">Amount</th>
+                <th>Amount</th>
                 <th>Status</th>
               </tr>
             </thead>
+
             <tbody>
               {pagedRecentFlags.map((f, i) => (
                 <tr key={i}>
                   <td>{f.student}</td>
                   <td>{f.parent}</td>
                   <td>{f.reported_by}</td>
-                  <td className="td-left">{f.amount_owed}</td>
+                  <td>{f.amount_owed}</td>
                   <td>
-                    <span className={badgeClass(f.status)}>
-                      {f.status}
-                    </span>
+                    <span className={statusClass(f.status)}>{f.status}</span>
                   </td>
                 </tr>
               ))}
@@ -257,93 +285,110 @@ export default function Dashboard() {
               )}
             </tbody>
           </table>
-        </div>
 
-        <div className="row-actions">
-          <button
-            className="btn btn-ghost"
-            disabled={recentPage === 1}
-            onClick={() => setRecentPage(recentPage - 1)}
-          >
-            Prev
-          </button>
-          <span className="muted">Page {recentPage}</span>
-          <button
-            className="btn btn-ghost"
-            disabled={recentEnd >= recentFlags.length}
-            onClick={() => setRecentPage(recentPage + 1)}
-          >
-            Next
-          </button>
-        </div>
-      </div>
-
-      {/* ================= MY FLAG ACTIVITY ================= */}
-      <div className="card">
-        <div className="card-head">
-          <h3 className="card-title">My Flag Activity</h3>
-          <div className="card-actions">
-            <button className="btn btn-outline" onClick={exportMyActivityCSV}>
-              Export CSV
+          <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 14 }}>
+            <button
+              className="btn-download"
+                        style={{
+                height: 34,
+                backgroundColor: "#919191", 
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                padding: "0 16px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+              disabled={recentPage === 1}
+              onClick={() => setRecentPage(recentPage - 1)}
+            >
+              Prev
+            </button>
+            <span style={{ color: "var(--dark-grey)",}}>Page {recentPage}</span>
+            <button
+              className="btn-download"
+                  style={{
+                height: 34,
+                backgroundColor: "#919191",  
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                padding: "0 16px",
+                fontWeight: 600,
+                cursor: "pointer"
+              }}
+              disabled={recentEnd >= recentFlags.length}
+              onClick={() => setRecentPage(recentPage + 1)}
+            >
+              Next
             </button>
           </div>
         </div>
 
-        <div className="table-wrap">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Parent</th>
-                <th>School</th>
-                <th className="td-left">Amount</th>
-                <th>Status</th>
-                <th>My Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {pagedMyActivity.map((f, i) => (
-                <tr key={i}>
-                  <td>{f.student}</td>
-                  <td>{f.parent}</td>
-                  <td>{f.school}</td>
-                  <td className="td-left">{f.amount_owed}</td>
-                  <td>
-                    <span className={badgeClass(f.status)}>
-                      {f.status}
-                    </span>
-                  </td>
-                  <td>
-                    <span className="pill">{f.my_action}</span>
-                  </td>
-                </tr>
-              ))}
+        {/* My Flag Activity (use todo panel, but as a compact list) */}
+        <div className="todo">
+          <div className="head">
+            <h3>My Flag Activity</h3>
+            <i className="bx bx-download" onClick={exportMyActivityCSV} title="Export CSV" />
+          </div>
 
-              {!myFlagActivity.length && (
-                <tr>
-                  <td colSpan="6">No activity recorded.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+          <ul className="todo-list">
+            {pagedMyActivity.map((f, i) => (
+              <li key={i} className={f.status === "CLEARED" ? "completed" : "not-completed"}>
+                <p style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                  <span style={{ fontWeight: 600 }}>{f.student}</span>
+                  <span style={{ fontSize: 12, color: "var(--dark-grey)" }}>
+                    {f.school} • {f.amount_owed} • {f.my_action}
+                  </span>
+                </p>
+              </li>
+            ))}
 
-        <div className="row-actions">
-          <button
-            className="btn btn-ghost"
-            disabled={myPage === 1}
-            onClick={() => setMyPage(myPage - 1)}
-          >
-            Prev
-          </button>
-          <span className="muted">Page {myPage}</span>
-          <button
-            className="btn btn-ghost"
-            disabled={myEnd >= myFlagActivity.length}
-            onClick={() => setMyPage(myPage + 1)}
-          >
-            Next
-          </button>
+            {!myFlagActivity.length && (
+              <li className="not-completed">
+                <p>No activity recorded.</p>
+                <i className="bx bx-info-circle" />
+              </li>
+            )}
+          </ul>
+
+          <div style={{ display: "flex", gap: 10, alignItems: "center", marginTop: 14 }}>
+            <button
+              className="btn-download"
+                        style={{
+                height: 34,
+                backgroundColor: "#919191", 
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                padding: "0 16px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+              disabled={myPage === 1}
+              onClick={() => setMyPage(myPage - 1)}
+            >
+              Prev
+            </button>
+            <span style={{ color: "var(--dark-grey)" }}>Page {myPage}</span>
+            <button
+              className="btn-download"
+                       style={{
+                height: 34,
+                backgroundColor: "#919191", 
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                padding: "0 16px",
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+              disabled={myEnd >= myFlagActivity.length}
+              onClick={() => setMyPage(myPage + 1)}
+            >
+              Next
+            </button>
+          </div>
         </div>
       </div>
     </>

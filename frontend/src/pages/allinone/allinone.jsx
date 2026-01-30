@@ -2,9 +2,10 @@ import { useEffect, useState } from "react";
 import { api } from "../../services/api";
 import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
+import "../../assets/css/create-records.css";
 
 /* ======================
-   AUTH HELPERS
+   AUTH
 ====================== */
 function getUserFromToken() {
   const token = localStorage.getItem("token");
@@ -17,14 +18,13 @@ function getUserFromToken() {
 }
 
 /* ======================
-   Searchable School Select
+   SEARCHABLE SCHOOL SELECT
 ====================== */
 function SearchableSchoolSelect({ schools, value, onChange }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
 
   const selected = schools.find((s) => String(s.id) === String(value));
-
   const filtered = schools.filter((s) =>
     s.name.toLowerCase().includes(query.toLowerCase().trim())
   );
@@ -49,20 +49,7 @@ function SearchableSchoolSelect({ schools, value, onChange }) {
       />
 
       {open && (
-        <div
-          className="card"
-          style={{
-            position: "absolute",
-            top: "100%",
-            left: 0,
-            right: 0,
-            zIndex: 50,
-            marginTop: 6,
-            maxHeight: 220,
-            overflowY: "auto",
-            padding: 8,
-          }}
-        >
+        <div className="card dropdown-panel">
           {filtered.length === 0 ? (
             <div className="muted" style={{ padding: 8 }}>
               No schools found
@@ -72,8 +59,7 @@ function SearchableSchoolSelect({ schools, value, onChange }) {
               <button
                 key={s.id}
                 type="button"
-                className="btn"
-                style={{ width: "100%", textAlign: "left", marginBottom: 6 }}
+                className="btn dropdown-item"
                 onClick={() => choose(s)}
               >
                 {s.name}
@@ -83,7 +69,7 @@ function SearchableSchoolSelect({ schools, value, onChange }) {
 
           <button
             type="button"
-            className="btn"
+            className="btn btn-ghost"
             style={{ width: "100%" }}
             onClick={() => setOpen(false)}
           >
@@ -96,7 +82,7 @@ function SearchableSchoolSelect({ schools, value, onChange }) {
 }
 
 /* ======================
-   MAIN COMPONENT
+   MAIN
 ====================== */
 export default function CreateRecords() {
   const navigate = useNavigate();
@@ -105,18 +91,13 @@ export default function CreateRecords() {
   const isSuperAdmin = user?.role === "SUPER_ADMIN";
   const userSchoolId = user?.school_id || "";
 
-  // wizard steps
   const [step, setStep] = useState("student");
   const [error, setError] = useState("");
 
   const [schools, setSchools] = useState([]);
   const [students, setStudents] = useState([]);
-
   const [createdStudentId, setCreatedStudentId] = useState(null);
 
-  /* ======================
-     Student form
-  ====================== */
   const [studentForm, setStudentForm] = useState({
     first_name: "",
     last_name: "",
@@ -129,9 +110,6 @@ export default function CreateRecords() {
     student_photo: null,
   });
 
-  /* ======================
-     Parent form
-  ====================== */
   const [parentForm, setParentForm] = useState({
     full_name: "",
     phone: "",
@@ -139,9 +117,6 @@ export default function CreateRecords() {
     address: "",
   });
 
-  /* ======================
-     Flag form
-  ====================== */
   const [flagForm, setFlagForm] = useState({
     student_id: "",
     parent_id: "",
@@ -151,9 +126,6 @@ export default function CreateRecords() {
     reason: "",
   });
 
-  /* ======================
-     Load initial data
-  ====================== */
   useEffect(() => {
     loadAll();
   }, []);
@@ -166,20 +138,14 @@ export default function CreateRecords() {
     setStudents(stu.students || []);
   };
 
-  /* ======================
-     🔒 Auto-assign school for school users
-  ====================== */
   useEffect(() => {
     if (!isSuperAdmin && userSchoolId) {
-      setStudentForm((prev) => ({
-        ...prev,
-        current_school_id: String(userSchoolId),
-      }));
+      setStudentForm((p) => ({ ...p, current_school_id: String(userSchoolId) }));
     }
   }, [isSuperAdmin, userSchoolId]);
 
   /* ======================
-     Auto-fill flag info when student selected
+     Auto-fill flag info when student selected (RESTORED)
   ====================== */
   useEffect(() => {
     if (!flagForm.student_id) return;
@@ -187,7 +153,6 @@ export default function CreateRecords() {
     const selected = students.find(
       (s) => String(s.id) === String(flagForm.student_id)
     );
-
     if (!selected) return;
 
     setFlagForm((prev) => ({
@@ -198,41 +163,31 @@ export default function CreateRecords() {
   }, [flagForm.student_id, students]);
 
   /* ======================
-     Submit Student
+     SUBMITS
   ====================== */
   const submitStudent = async (e) => {
     e.preventDefault();
     setError("");
 
     try {
-      const formData = new FormData();
-
+      const fd = new FormData();
       Object.entries(studentForm).forEach(([k, v]) => {
-        if (v !== null && v !== undefined) {
-          formData.append(k, v);
-        }
+        if (v !== null && v !== undefined && v !== "") fd.append(k, v);
       });
 
-      const res = await api("/students", {
-        method: "POST",
-        body: formData,
-      });
-
+      const res = await api("/students", { method: "POST", body: fd });
       setCreatedStudentId(res.student_id);
 
+      // ✅ RESTORED: refresh students so the newly created student appears in Flag dropdown
       const stu = await api("/students");
       setStudents(stu.students || []);
 
-      alert("Student created successfully");
       setStep("parent");
     } catch (err) {
       setError(err.message);
     }
   };
 
-  /* ======================
-     Submit Parent
-  ====================== */
   const submitParent = async (e) => {
     e.preventDefault();
     setError("");
@@ -248,19 +203,16 @@ export default function CreateRecords() {
         body: JSON.stringify({ parent_id: res.parent_id }),
       });
 
-      alert("Parent created and linked");
-      setStep("flag");
-
+      // ✅ RESTORED: refresh students again so parent_id is reflected before Flagging
       const stu = await api("/students");
       setStudents(stu.students || []);
+
+      setStep("flag");
     } catch (err) {
       setError(err.message);
     }
   };
 
-  /* ======================
-     Submit Flag
-  ====================== */
   const submitFlag = async (e) => {
     e.preventDefault();
     setError("");
@@ -271,235 +223,243 @@ export default function CreateRecords() {
         body: JSON.stringify({
           ...flagForm,
           student_id: Number(flagForm.student_id),
-          parent_id: flagForm.parent_id
-            ? Number(flagForm.parent_id)
-            : null,
+          parent_id: flagForm.parent_id ? Number(flagForm.parent_id) : null,
           reported_by_school_id: Number(flagForm.reported_by_school_id),
           amount_owed: Number(flagForm.amount_owed),
         }),
       });
 
-      alert("Flag created successfully");
       navigate("/flags");
     } catch (err) {
       setError(err.message);
     }
   };
 
-  /* ======================
-     UI
-  ====================== */
   return (
-    <div className="card">
-      <h2>Create Records</h2>
+    <div className="card create-records">
+      <div className="create-records-head">
+        <div>
+          <div className="create-records-title">Create Records</div>
+          <div className="create-records-subtitle">
+            Student → Parent → Fee Flag
+          </div>
+        </div>
+      </div>
+
+      <div className="stepper">
+        <div
+          className={`step ${
+            step === "student" ? "active" : step !== "student" ? "done" : ""
+          }`}
+        >
+          Student
+        </div>
+        <div
+          className={`step ${
+            step === "parent" ? "active" : step === "flag" ? "done" : ""
+          }`}
+        >
+          Parent
+        </div>
+        <div className={`step ${step === "flag" ? "active" : ""}`}>Flag</div>
+      </div>
+
       {error && <div className="danger">{error}</div>}
 
-      {/* ================= STUDENT ================= */}
       {step === "student" && (
-        <form onSubmit={submitStudent}>
-          <h3>Student Details</h3>
+        <form onSubmit={submitStudent} className="form-section">
+          <h3>Student Information</h3>
 
-          <input
-            className="input"
-            placeholder="First Name"
-            required
-            onChange={(e) =>
-              setStudentForm({ ...studentForm, first_name: e.target.value })
-            }
-          />
-
-          <input
-            className="input"
-            placeholder="Last Name"
-            required
-            onChange={(e) =>
-              setStudentForm({ ...studentForm, last_name: e.target.value })
-            }
-          />
-
-          <input
-            className="input"
-            placeholder="Other Names"
-            onChange={(e) =>
-              setStudentForm({ ...studentForm, other_names: e.target.value })
-            }
-          />
-
-          <input
-            type="date"
-            className="input"
-            required
-            onChange={(e) =>
-              setStudentForm({
-                ...studentForm,
-                date_of_birth: e.target.value,
-              })
-            }
-          />
-
-          <select
-            className="select"
-            onChange={(e) =>
-              setStudentForm({ ...studentForm, gender: e.target.value })
-            }
-          >
-            <option>Male</option>
-            <option>Female</option>
-          </select>
-
-          {isSuperAdmin ? (
-            <SearchableSchoolSelect
-              schools={schools}
-              value={studentForm.current_school_id}
-              onChange={(val) =>
-                setStudentForm({ ...studentForm, current_school_id: val })
-              }
-            />
-          ) : (
+          <div className="form-grid">
             <input
               className="input"
-              disabled
-              value={
-                schools.find(
-                  (s) => String(s.id) === String(userSchoolId)
-                )?.name || "Your School"
+              placeholder="First Name"
+              required
+              onChange={(e) =>
+                setStudentForm({ ...studentForm, first_name: e.target.value })
               }
             />
-          )}
+            <input
+              className="input"
+              placeholder="Last Name"
+              required
+              onChange={(e) =>
+                setStudentForm({ ...studentForm, last_name: e.target.value })
+              }
+            />
+            <input
+              className="input"
+              placeholder="Other Names"
+              onChange={(e) =>
+                setStudentForm({ ...studentForm, other_names: e.target.value })
+              }
+            />
+            <input
+              type="date"
+              className="input"
+              required
+              onChange={(e) =>
+                setStudentForm({ ...studentForm, date_of_birth: e.target.value })
+              }
+            />
 
-          <input
-            className="input"
-            placeholder="Leaving Class / Grade"
-            required
-            onChange={(e) =>
-              setStudentForm({
-                ...studentForm,
-                leaving_class: e.target.value,
-              })
-            }
-          />
+            <select
+              className="select"
+              onChange={(e) =>
+                setStudentForm({ ...studentForm, gender: e.target.value })
+              }
+            >
+              <option>Male</option>
+              <option>Female</option>
+            </select>
 
-          <input
-            className="input"
-            placeholder="Student ID from Previous School"
-            onChange={(e) =>
-              setStudentForm({
-                ...studentForm,
-                student_school_id: e.target.value,
-              })
-            }
-          />
+            {isSuperAdmin ? (
+              <SearchableSchoolSelect
+                schools={schools}
+                value={studentForm.current_school_id}
+                onChange={(val) =>
+                  setStudentForm({ ...studentForm, current_school_id: val })
+                }
+              />
+            ) : (
+              <input className="input" disabled value="Your School" />
+            )}
 
-          <input
-            type="file"
-            accept="image/*"
-            className="input"
-            onChange={(e) =>
-              setStudentForm({
-                ...studentForm,
-                student_photo: e.target.files?.[0] || null,
-              })
-            }
-          />
+            <input
+              className="input"
+              placeholder="Leaving Class"
+              required
+              onChange={(e) =>
+                setStudentForm({ ...studentForm, leaving_class: e.target.value })
+              }
+            />
+            <input
+              className="input"
+              placeholder="Previous Student ID"
+              onChange={(e) =>
+                setStudentForm({
+                  ...studentForm,
+                  student_school_id: e.target.value,
+                })
+              }
+            />
+            <input
+              type="file"
+              className="input"
+              onChange={(e) =>
+                setStudentForm({
+                  ...studentForm,
+                  student_photo: e.target.files?.[0] || null,
+                })
+              }
+            />
+          </div>
 
-          <button className="btn">Save Student & Continue</button>
+          <div className="form-footer">
+            <button className="btn btn-primary">Save & Continue</button>
+          </div>
         </form>
       )}
 
-      {/* ================= PARENT ================= */}
       {step === "parent" && (
-        <form onSubmit={submitParent}>
-          <h3>Parent Details</h3>
+        <form onSubmit={submitParent} className="form-section">
+          <h3>Parent Information</h3>
 
-          <input
-            className="input"
-            placeholder="Full Name"
-            required
-            onChange={(e) =>
-              setParentForm({ ...parentForm, full_name: e.target.value })
-            }
-          />
+          <div className="form-grid">
+            <input
+              className="input"
+              placeholder="Full Name"
+              required
+              onChange={(e) =>
+                setParentForm({ ...parentForm, full_name: e.target.value })
+              }
+            />
+            <input
+              className="input"
+              placeholder="Phone"
+              required
+              onChange={(e) =>
+                setParentForm({ ...parentForm, phone: e.target.value })
+              }
+            />
+            <input
+              className="input"
+              placeholder="Ghana Card"
+              onChange={(e) =>
+                setParentForm({
+                  ...parentForm,
+                  ghana_card_number: e.target.value,
+                })
+              }
+            />
+            <input
+              className="input"
+              placeholder="Address"
+              onChange={(e) =>
+                setParentForm({ ...parentForm, address: e.target.value })
+              }
+            />
+          </div>
 
-          <input
-            className="input"
-            placeholder="Phone"
-            required
-            onChange={(e) =>
-              setParentForm({ ...parentForm, phone: e.target.value })
-            }
-          />
-
-          <input
-            className="input"
-            placeholder="Ghana Card Number"
-            onChange={(e) =>
-              setParentForm({
-                ...parentForm,
-                ghana_card_number: e.target.value,
-              })
-            }
-          />
-
-          <input
-            className="input"
-            placeholder="Address"
-            onChange={(e) =>
-              setParentForm({ ...parentForm, address: e.target.value })
-            }
-          />
-
-          <button className="btn">Save Parent & Continue</button>
+          <div className="form-footer">
+            <button className="btn btn-primary">Save & Continue</button>
+          </div>
         </form>
       )}
 
-      {/* ================= FLAG ================= */}
       {step === "flag" && (
-        <form onSubmit={submitFlag}>
+        <form onSubmit={submitFlag} className="form-section">
           <h3>Flag Student</h3>
 
-          <select
-            className="select"
-            required
-            onChange={(e) =>
-              setFlagForm({ ...flagForm, student_id: e.target.value })
-            }
-          >
-            <option value="">Select Student</option>
-            {students.map((s) => (
-              <option key={s.id} value={s.id}>
-                {s.name}
-              </option>
-            ))}
-          </select>
+          <div className="form-grid">
+            <select
+              className="select"
+              required
+              value={flagForm.student_id}
+              onChange={(e) =>
+                setFlagForm({ ...flagForm, student_id: e.target.value })
+              }
+            >
+              <option value="">Select Student</option>
+              {students.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
 
-          <input
-            className="input"
-            placeholder="Amount Owed"
-            required
-            onChange={(e) =>
-              setFlagForm({ ...flagForm, amount_owed: e.target.value })
-            }
-          />
+            <input
+              className="input"
+              placeholder="Amount Owed"
+              required
+              onChange={(e) =>
+                setFlagForm({ ...flagForm, amount_owed: e.target.value })
+              }
+            />
 
-          <select
-            className="select"
-            onChange={(e) =>
-              setFlagForm({ ...flagForm, currency: e.target.value })
-            }
-          >
-            <option value="GHS">GHS</option>
-            <option value="USD">USD</option>
-          </select>
+            <select
+              className="select"
+              value={flagForm.currency}
+              onChange={(e) =>
+                setFlagForm({ ...flagForm, currency: e.target.value })
+              }
+            >
+              <option>GHS</option>
+              <option>USD</option>
+            </select>
 
-          <input
-            className="input"
-            placeholder="Reason"
-            onChange={(e) =>
-              setFlagForm({ ...flagForm, reason: e.target.value })
-            }
-          />
+            <input
+              className="input"
+              placeholder="Reason"
+              onChange={(e) =>
+                setFlagForm({ ...flagForm, reason: e.target.value })
+              }
+            />
+          </div>
 
-          <button className="btn danger">Save Flag</button>
+          <div className="form-footer">
+            <button className="btn btn-danger">Save Flag</button>
+          </div>
         </form>
       )}
     </div>

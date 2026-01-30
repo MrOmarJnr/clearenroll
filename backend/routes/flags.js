@@ -6,7 +6,6 @@ module.exports = (pool, authMiddleware) => {
   /**
    * ======================================================
    * GET ALL FLAGS (SYSTEM VIEW)
-   * - Visible to SUPER_ADMIN & SCHOOL_ADMIN
    * ======================================================
    */
   router.get("/", authMiddleware, async (req, res) => {
@@ -47,9 +46,42 @@ module.exports = (pool, authMiddleware) => {
 
   /**
    * ======================================================
+   * FLAG AUDIT LOGS (READ ONLY)
+   * ⚠️ MUST COME BEFORE /:id
+   * ======================================================
+   */
+  router.get("/audit", authMiddleware, async (req, res) => {
+    try {
+      const [rows] = await pool.query(`
+        SELECT
+          al.id,
+          al.flag_id,
+          CONCAT(s.first_name, ' ', s.last_name) AS student,
+          p.full_name AS parent,
+          sc.name AS school,
+          al.amount_owed,
+          al.currency,
+          al.action,
+          u.email AS performed_by,
+          al.created_at
+        FROM flag_audit_logs al
+        LEFT JOIN students s ON s.id = al.student_id
+        LEFT JOIN parents p ON p.id = al.parent_id
+        LEFT JOIN schools sc ON sc.id = al.school_id
+        LEFT JOIN users u ON u.id = al.performed_by_user_id
+        ORDER BY al.created_at DESC
+      `);
+
+      res.json({ logs: rows });
+    } catch (err) {
+      console.error("FLAG AUDIT ERROR:", err);
+      res.status(500).json({ message: "Failed to load audit logs" });
+    }
+  });
+
+  /**
+   * ======================================================
    * CREATE FLAG
-   * - Records creator
-   * - Inserts AUDIT LOG (FLAGGED)
    * ======================================================
    */
   router.post("/", authMiddleware, async (req, res) => {
@@ -100,7 +132,6 @@ module.exports = (pool, authMiddleware) => {
 
       const flagId = result.insertId;
 
-      // 🔍 AUDIT LOG (FLAGGED)
       await conn.query(
         `
         INSERT INTO flag_audit_logs
@@ -142,63 +173,74 @@ module.exports = (pool, authMiddleware) => {
     }
   });
 
-
-  // GET single flag details (for View modal)
-router.get("/:id", authMiddleware, async (req, res) => {
-  try {
+  /**
+   * ======================================================
+   * GET SINGLE FLAG (VIEW MODAL)
+   * ======================================================
+   */
+  router.get("/:id", authMiddleware, async (req, res) => {
     const flagId = Number(req.params.id);
 
-    const [rows] = await pool.query(
-      `
-      SELECT
-        f.id,
-        f.student_id,
-        f.parent_id,
-        f.amount_owed,
-        f.currency,
-        f.reason,
-        f.status,
-        sc.name AS reported_by,
-        f.reported_by_school_id
-      FROM flags f
-      JOIN schools sc ON sc.id = f.reported_by_school_id
-      WHERE f.id = ?
-      LIMIT 1
-      `,
-      [flagId]
-    );
-
-    if (!rows.length) {
-      return res.status(404).json({ message: "Flag not found" });
+    // 🔒 HARD GUARD — FIXES NaN BUG
+    if (!Number.isInteger(flagId)) {
+      return res.status(400).json({ message: "Invalid flag ID" });
     }
 
-    const flag = rows[0];
+    try {
+      const [rows] = await pool.query(
+        `
+        SELECT
+          f.id,
+          f.student_id,
+          f.parent_id,
+          f.amount_owed,
+          f.currency,
+          f.reason,
+          f.status,
+          sc.name AS reported_by,
+          f.reported_by_school_id
+        FROM flags f
+        JOIN schools sc ON sc.id = f.reported_by_school_id
+        WHERE f.id = ?
+        LIMIT 1
+        `,
+        [flagId]
+      );
 
-    // 🔒 Optional: school scoping for SCHOOL_ADMIN
-    if (req.user.role === "SCHOOL_ADMIN") {
-      if (Number(flag.reported_by_school_id) !== Number(req.user.school_id)) {
-        return res.status(403).json({ message: "Forbidden" });
+      if (!rows.length) {
+        return res.status(404).json({ message: "Flag not found" });
       }
+
+      const flag = rows[0];
+
+      if (req.user.role === "SCHOOL_ADMIN") {
+        if (
+          Number(flag.reported_by_school_id) !==
+          Number(req.user.school_id)
+        ) {
+          return res.status(403).json({ message: "Forbidden" });
+        }
+      }
+
+      res.json({ flag });
+    } catch (err) {
+      console.error("GET FLAG ERROR:", err);
+      res.status(500).json({ message: "Failed to load flag" });
     }
-
-    res.json({ flag });
-  } catch (err) {
-    console.error("GET FLAG ERROR:", err);
-    res.status(500).json({ message: "Failed to load flag" });
-  }
-});
-
+  });
 
   /**
    * ======================================================
    * CLEAR FLAG
-   * - Creator OR SUPER_ADMIN
-   * - Inserts AUDIT LOG (CLEARED)
    * ======================================================
    */
   router.patch("/:id/clear", authMiddleware, async (req, res) => {
-    const flagId = req.params.id;
+    const flagId = Number(req.params.id);
     const { userId, role } = req.user;
+
+    if (!Number.isInteger(flagId)) {
+      return res.status(400).json({ message: "Invalid flag ID" });
+    }
 
     try {
       const [[flag]] = await pool.query(
@@ -246,7 +288,6 @@ router.get("/:id", authMiddleware, async (req, res) => {
         [userId, flagId]
       );
 
-      // 🔍 AUDIT LOG (CLEARED)
       await pool.query(
         `
         INSERT INTO flag_audit_logs

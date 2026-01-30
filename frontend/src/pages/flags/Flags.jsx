@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { api } from "../../services/api";
+import "../../assets/css/students.css"; // reuse same visual language
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -10,27 +10,20 @@ export default function Flags() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
-  // =====================================================
-  // Get logged-in user from JWT (SAME AS DashboardLayout)
-  // =====================================================
+  // ===============================
+  // Logged-in user (SAFE)
+  // ===============================
   const token = localStorage.getItem("token");
-
-
-
 
   const getUserSafe = () => {
     try {
       if (!token) return null;
-
       const payload = jwtDecode(token);
-
       if (payload?.exp && Date.now() >= payload.exp * 1000) {
         localStorage.removeItem("token");
         return null;
       }
-
       return payload;
-      
     } catch {
       localStorage.removeItem("token");
       return null;
@@ -38,17 +31,17 @@ export default function Flags() {
   };
 
   const user = getUserSafe();
-  console.log("cccc" + user)
-  // =====================================================
-  // Load all flags
-  // =====================================================
+
+  // ===============================
+  // Load flags
+  // ===============================
   const load = async () => {
     setError("");
     try {
       const data = await api("/flags");
       setFlags(data.flags || []);
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to load flags");
     }
   };
 
@@ -56,22 +49,26 @@ export default function Flags() {
     load();
   }, []);
 
-  // =====================================================
+  // ===============================
   // Clear flag
-  // =====================================================
+  // ===============================
   const clearFlag = async (flagId) => {
-    setError("");
+    const ok = window.confirm(
+      "Are you sure you want to clear this flag?\nThis action will be logged."
+    );
+    if (!ok) return;
+
     try {
       await api(`/flags/${flagId}/clear`, { method: "PATCH" });
       await load();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || "Failed to clear flag");
     }
   };
 
-  // =====================================================
-  // Search filter (keeps existing UX)
-  // =====================================================
+  // ===============================
+  // Search
+  // ===============================
   const filteredFlags = flags.filter((f) => {
     const term = search.toLowerCase();
     return (
@@ -84,9 +81,9 @@ export default function Flags() {
     );
   });
 
-  // =====================================================
-  // Photo renderer (unchanged behaviour)
-  // =====================================================
+  // ===============================
+  // Photo helper
+  // ===============================
   const renderStudentPhoto = (photo, name) => {
     if (!photo) {
       const initials = name
@@ -95,20 +92,20 @@ export default function Flags() {
             .map((n) => n[0])
             .join("")
             .slice(0, 2)
-        : "N/A";
+        : "NA";
 
       return (
         <div
           style={{
-            width: 60,
-            height: 60,
+            width: 48,
+            height: 48,
             borderRadius: "50%",
             background: "#e5e7eb",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            fontWeight: 700,
             fontSize: 12,
-            fontWeight: 600,
           }}
         >
           {initials}
@@ -121,122 +118,109 @@ export default function Flags() {
         src={`${API_URL}/uploads/students/${photo}`}
         alt="Student"
         style={{
-          width: 60,
-          height: 60,
+          width: 48,
+          height: 48,
           borderRadius: "50%",
           objectFit: "cover",
           border: "1px solid #ddd",
-        }}
-        onError={(e) => {
-          e.target.onerror = null;
-          e.target.style.display = "none";
         }}
       />
     );
   };
 
-  // =====================================================
-  // Styles
-  // =====================================================
-  const clearBtnStyle = {
-    background: "#ef4444",
-    color: "#fff",
-    border: "none",
-    padding: "4px 10px",
-    borderRadius: "6px",
-    cursor: "pointer",
-    fontSize: "13px",
-  };
-
+  // ===============================
+  // RENDER
+  // ===============================
   return (
     <div className="card">
-      <h2>Flags</h2>
-
-      {/* ACTION BAR */}
-      <div
-        className="row-actions"
-        style={{
-          display: "flex",
-          justifyContent: "flex-end",
-          marginBottom: "8px",
-        }}
-      >
-        <Link className="link" to="/flags/create">
-          + Add Flag
-        </Link>
+      {/* PAGE HEADER */}
+      <div className="students-head">
+        <div>
+          <h1 className="students-title">Flags Registry</h1>
+          <div className="students-subtitle">
+            All fee-related flags recorded across schools
+          </div>
+        </div>
       </div>
 
       {error && <div className="danger">{error}</div>}
 
       {/* SEARCH */}
       <input
-        className="input"
-        placeholder="Search by student, parent, school, status or amount..."
+        className="input students-search"
+        placeholder="Search by student, parent, school, status or amount…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
-        style={{ marginBottom: "12px" }}
       />
 
-      <table className="table">
-        <thead>
-          <tr>
-            <th>Photo</th>
-            <th>Student</th>
-            <th>Parent</th>
-            <th>Reported By</th>
-            <th>Location</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {filteredFlags.map((f) => {
-            const isFlagged = f.status === "FLAGGED";
-            const isSuperAdmin = user?.role === "SUPER_ADMIN";
-
-            const canClear =
-              isFlagged &&
-              user &&
-              (isSuperAdmin ||
-                Number(f.created_by_user_id) === Number(user.id));
-
-            return (
-              <tr key={f.id}>
-                <td>{renderStudentPhoto(f.student_photo, f.student)}</td>
-                <td>{f.student || "-"}</td>
-                <td>{f.parent || "-"}</td>
-                <td>{f.reported_by || "-"}</td>
-                <td>{f.school_location || "-"}</td>
-                <td>
-                  {f.currency} {Number(f.amount_owed).toLocaleString()}
-                </td>
-                <td className={isFlagged ? "danger" : ""}>
-                  {f.status}
-                </td>
-
-                <td>
-                  {canClear && (
-                    <button
-                      style={clearBtnStyle}
-                      onClick={() => clearFlag(f.id)}
-                    >
-                      Clear
-                    </button>
-                  )}
-                </td>
-              </tr>
-            );
-          })}
-
-          {!filteredFlags.length && (
+      {/* TABLE */}
+      <div className="students-table-wrap">
+        <table className="table">
+          <thead>
             <tr>
-              <td colSpan="8">No flags found.</td>
+              <th>Photo</th>
+              <th>Student</th>
+              <th>Parent</th>
+              <th>Reported By</th>
+              <th>Location</th>
+              <th>Amount</th>
+              <th>Status</th>
+              <th className="td-right">Actions</th>
             </tr>
-          )}
-        </tbody>
-      </table>
+          </thead>
+
+          <tbody>
+            {filteredFlags.map((f) => {
+              const isFlagged = f.status === "FLAGGED";
+              const isSuperAdmin = user?.role === "SUPER_ADMIN";
+
+              const canClear =
+                isFlagged &&
+                user &&
+                (isSuperAdmin ||
+                  Number(f.created_by_user_id) === Number(user.id));
+
+              return (
+                <tr key={f.id}>
+                  <td>{renderStudentPhoto(f.student_photo, f.student)}</td>
+                  <td>{f.student || "-"}</td>
+                  <td>{f.parent || "-"}</td>
+                  <td>{f.reported_by || "-"}</td>
+                  <td>{f.school_location || "-"}</td>
+                  <td>
+                    {f.currency}{" "}
+                    {Number(f.amount_owed || 0).toLocaleString()}
+                  </td>
+                  <td>
+                    {isFlagged ? (
+                      <span className="badge badge-danger">FLAGGED</span>
+                    ) : (
+                      <span className="badge badge-success">CLEARED</span>
+                    )}
+                  </td>
+
+                  <td className="td-right">
+                    {canClear && (
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => clearFlag(f.id)}
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+
+            {!filteredFlags.length && (
+              <tr>
+                <td colSpan="8">No flags found.</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

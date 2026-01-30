@@ -1,0 +1,222 @@
+/* ===============================
+   CREATE RECORDS – PAGE STYLES
+   Uses main theme variables
+================================ */
+
+.create-records {
+  max-width: 920px;
+}
+
+/* ---------- Header ---------- */
+.create-records-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+
+.create-records-title {
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.create-records-subtitle {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ---------- Step Indicator ---------- */
+.stepper {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.step {
+  flex: 1;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: #f9fafb;
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  color: var(--muted);
+}
+
+.step.active {
+  background: var(--primary-weak);
+  border-color: rgba(37, 99, 235, 0.35);
+  color: var(--primary);
+}
+
+.step.done {
+  background: var(--success-weak);
+  border-color: rgba(22, 163, 74, 0.3);
+  color: var(--success);
+}
+
+/* ---------- Form Sections ---------- */
+.form-section {
+  margin-top: 14px;
+}
+
+.form-section h3 {
+  font-size: 15px;
+  font-weight: 800;
+  margin-bottom: 14px;
+}
+
+/* ---------- Two Column Grid ---------- */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+@media (max-width: 700px) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- Footer Actions ---------- */
+.form-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+/* ---------- Searchable Select ---------- */
+.dropdown-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 20;
+  margin-top: 6px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.dropdown-item {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 6px;
+}
+
+/* ======================================
+   FORM POLISH – VISUAL ONLY
+   Safe: no logic impact
+====================================== */
+
+/* Make form sections feel like inner cards */
+.form-section {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 18px 20px 20px;
+}
+
+/* Headings */
+.form-section h3 {
+  margin-top: 0;
+  letter-spacing: -0.01em;
+}
+
+/* Inputs & selects */
+.input,
+.select {
+  height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  font-size: 14px;
+  background: #fff;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Text inputs specifically */
+.input::placeholder {
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* Focus state */
+.input:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+/* Disabled inputs */
+.input:disabled {
+  background: #f3f4f6;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* File input */
+input[type="file"].input {
+  padding: 9px 12px;
+  height: auto;
+  font-size: 13px;
+  background: #f9fafb;
+}
+
+/* Improve spacing in grid */
+.form-grid {
+  row-gap: 16px;
+  column-gap: 18px;
+}
+
+/* Footer actions */
+.form-footer {
+  margin-top: 22px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+/* Primary button */
+.btn-primary {
+  min-width: 180px;
+  height: 44px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+}
+
+/* Danger button */
+.btn-danger {
+  min-width: 180px;
+  height: 44px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+/* Button hover */
+.btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+.btn-danger:hover {
+  filter: brightness(0.95);
+}
+
+/* Stepper refinement */
+.step {
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Remove ugly browser validation tooltip feel */
+input:required:invalid {
+  box-shadow: none;
+}

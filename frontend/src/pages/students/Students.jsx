@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import { api } from "../../services/api";
+import "../../assets/css/students.css";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -10,14 +11,12 @@ export default function Students() {
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
 
-  // ✅ Modal states
+  // Modal states
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedFlag, setSelectedFlag] = useState(null);
   const [viewLoading, setViewLoading] = useState(false);
 
-  // =====================================================
-  // SAFE USER EXTRACTION (NO SIDE EFFECTS)
-  // =====================================================
+  // Safe user extraction
   const token = localStorage.getItem("token");
 
   const getUserSafe = () => {
@@ -40,9 +39,7 @@ export default function Students() {
 
   const user = getUserSafe();
 
-  // =====================================================
-  // LOAD STUDENTS
-  // =====================================================
+  // Load students
   const load = async () => {
     setError("");
     try {
@@ -57,37 +54,32 @@ export default function Students() {
     load();
   }, []);
 
-  // =====================================================
-  // CLEAR FLAG (BACKEND IS SOURCE OF TRUTH)
-  // =====================================================
+  // Clear flag
   const clearFlagForStudent = async (flagId) => {
     if (!flagId) return;
 
     const confirmed = window.confirm(
       "Are you sure you want to clear this student's flag?\n\nThis action will be logged and cannot be undone."
     );
-
     if (!confirmed) return;
 
     setError("");
     try {
       await api(`/flags/${flagId}/clear`, { method: "PATCH" });
-      await load(); // ⬅ cleared student leaves list
+      await load();
     } catch (err) {
       setError(err.message || "Failed to clear flag");
     }
   };
 
-  // =====================================================
-  // 🔑 CORE RULE: ONLY FLAGGED STUDENTS
-  // =====================================================
+  // ONLY flagged students
   const flaggedStudents = students.filter((s) => s.active_flag_id);
 
-  // =====================================================
-  // SEARCH
-  // =====================================================
+  // Search
   const filteredStudents = flaggedStudents.filter((s) => {
-    const term = search.toLowerCase();
+    const term = search.trim().toLowerCase();
+    if (!term) return true;
+
     return (
       s.name?.toLowerCase().includes(term) ||
       s.school?.toLowerCase().includes(term) ||
@@ -96,9 +88,7 @@ export default function Students() {
     );
   });
 
-  // =====================================================
-  // HELPERS
-  // =====================================================
+  // Helpers
   const formatDateDMY = (dateStr) => {
     if (!dateStr) return "";
     const d = new Date(dateStr);
@@ -108,7 +98,7 @@ export default function Students() {
     ).padStart(2, "0")}-${d.getFullYear()}`;
   };
 
-  const renderStudentPhoto = (photo, name, size = 90) => {
+  const renderStudentPhoto = (photo, name) => {
     if (!photo) {
       const initials = name
         ? name
@@ -118,39 +108,16 @@ export default function Students() {
             .slice(0, 2)
         : "NA";
 
-      return (
-        <div
-          style={{
-            width: size,
-            height: size,
-            borderRadius: "50%",
-            background: "#e5e7eb",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 600,
-            fontSize: 12,
-          }}
-        >
-          {initials}
-        </div>
-      );
+      return <div className="student-avatar">{initials}</div>;
     }
 
     return (
       <img
+        className="student-photo"
         src={`${API_URL}/uploads/students/${photo}`}
-        alt="Student"
-        style={{
-          width: size,
-          height: size,
-          borderRadius: "50%",
-          objectFit: "cover",
-          border: "1px solid #ddd",
-        }}
+        alt={name || "Student"}
         onError={(e) => {
-          e.target.onerror = null;
-          e.target.style.display = "none";
+          e.currentTarget.style.display = "none";
         }}
       />
     );
@@ -162,9 +129,7 @@ export default function Students() {
     setViewLoading(false);
   };
 
-  // =====================================================
-  // ✅ VIEW: load exact flag data (same fields Verify uses)
-  // =====================================================
+  // View modal (load flag details)
   const openViewModal = async (studentRow) => {
     setError("");
     setSelectedStudent(studentRow);
@@ -172,7 +137,6 @@ export default function Students() {
     setViewLoading(true);
 
     try {
-      // ✅ This endpoint we'll add in backend (below)
       const data = await api(`/flags/${studentRow.active_flag_id}`);
       setSelectedFlag(data.flag || null);
     } catch (err) {
@@ -182,99 +146,108 @@ export default function Students() {
     }
   };
 
-  // =====================================================
-  // RENDER
-  // =====================================================
   return (
     <>
       <div className="card">
-        <h2>Flagged Students</h2>
+        <div className="students-head">
+          <div>
+            <h1 className="students-title">Flagged Students</h1>
+            <div className="students-subtitle">
+              Only students with active fee flags appear here
+            </div>
+          </div>
+        </div>
 
-        {error && <div className="danger">{error}</div>}
+        {error && <div className="students-error">{error}</div>}
 
         <input
-          className="input"
+          className="students-search"
           placeholder="Search by name, school, parent or ID..."
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ marginBottom: "12px" }}
         />
 
-        <table className="table">
-          <thead>
-            <tr>
-              <th>Photo</th>
-              <th>Name</th>
-              <th>Student ID</th>
-              <th>DOB</th>
-              <th>Gender</th>
-              <th>School</th>
-              <th>Guardian</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
+        <div className="students-table-wrap">
+          <table className="students-table">
+            <thead>
+              <tr>
+                <th>Photo</th>
+                <th>Name</th>
+                <th>Student ID</th>
+                <th>DOB</th>
+                <th>Gender</th>
+                <th>School</th>
+                <th>Guardian</th>
+                <th>Status</th>
+                <th style={{ textAlign: "right" }}>Actions</th>
+              </tr>
+            </thead>
 
-          <tbody>
-            {filteredStudents.map((s) => {
-              const isSuperAdmin = user?.role === "SUPER_ADMIN";
-              const isSchoolAdmin = user?.role === "SCHOOL_ADMIN";
+            <tbody>
+              {filteredStudents.map((s) => {
+                const isSuperAdmin = user?.role === "SUPER_ADMIN";
+                const isSchoolAdmin = user?.role === "SCHOOL_ADMIN";
 
-              // ✅ FINAL PERMISSION RULE (UNCHANGED)
-              const canClear =
-                isSuperAdmin ||
-                (isSchoolAdmin &&
-                  Number(s.reported_by_school_id) === Number(user.school_id));
+                // Permission rule (unchanged)
+                const canClear =
+                  isSuperAdmin ||
+                  (isSchoolAdmin &&
+                    Number(s.reported_by_school_id) === Number(user.school_id));
 
-              return (
-                <tr key={s.id}>
-                  <td>{renderStudentPhoto(s.student_photo, s.name)}</td>
-                  <td>{s.name}</td>
-                  <td>{s.id}</td>
-                  <td>{formatDateDMY(s.date_of_birth)}</td>
-                  <td>{s.gender}</td>
-                  <td>{s.school}</td>
-                  <td>{s.parent || "-"}</td>
-                  <td className="danger">FLAGGED</td>
+                return (
+                  <tr key={s.id}>
+                    <td>{renderStudentPhoto(s.student_photo, s.name)}</td>
+                    <td>{s.name}</td>
+                    <td>{s.id}</td>
+                    <td>{formatDateDMY(s.date_of_birth)}</td>
+                    <td>{s.gender}</td>
+                    <td>{s.school}</td>
+                    <td>{s.parent || "-"}</td>
+                    <td>
+                      <span className="badge badge-danger">FLAGGED</span>
+                    </td>
 
-                  <td style={{ display: "flex", gap: "10px" }}>
-                    <button
-                      className="btn btn-outline"
-                      type="button"
-                      onClick={() => openViewModal(s)}
-                    >
-                      View
-                    </button>
+                    <td>
+                      <div className="students-actions">
+                        <button
+                          className="btn btn-outline"
+                          type="button"
+                          onClick={() => openViewModal(s)}
+                        >
+                          View
+                        </button>
 
-                    <Link className="link" to={`/students/${s.id}/edit`}>
-                      Edit Record
-                    </Link>
+                        <Link className="students-link" to={`/students/${s.id}/edit`}>
+                          Edit
+                        </Link>
 
-                    {canClear && (
-                      <button
-                        className="btn danger"
-                        onClick={() => clearFlagForStudent(s.active_flag_id)}
-                      >
-                        Clear
-                      </button>
-                    )}
+                        {canClear && (
+                          <button
+                            className="btn btn-danger"
+                            onClick={() => clearFlagForStudent(s.active_flag_id)}
+                          >
+                            Clear
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+
+              {!filteredStudents.length && (
+                <tr>
+                  <td colSpan="9" className="students-empty">
+                    No flagged students found.
                   </td>
                 </tr>
-              );
-            })}
-
-            {!filteredStudents.length && (
-              <tr>
-                <td colSpan="9">No flagged students found.</td>
-              </tr>
-            )}
-          </tbody>
-        </table>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
-      {/* =========================
-          MODAL (use real flag values)
-         ========================= */}
+      {/* Modal (kept same logic, just cleaner class usage) */}
       {selectedStudent && (
         <div
           onClick={closeModal}
@@ -296,26 +269,27 @@ export default function Students() {
               width: "min(980px, 96vw)",
               maxHeight: "90vh",
               overflowY: "auto",
-              borderRadius: 10,
+              borderRadius: 12,
               padding: 22,
+              border: "1px solid #e5e7eb",
             }}
           >
             <div style={{ display: "flex", justifyContent: "space-between", gap: 20 }}>
               <div>
-                <h2 style={{ marginBottom: 6 }}>Student Details</h2>
-                <div style={{ opacity: 0.75 }}>Record view</div>
+                <h2 style={{ margin: 0 }}>Student Details</h2>
+                <div style={{ opacity: 0.7, marginTop: 4 }}>Record view</div>
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                {renderStudentPhoto(selectedStudent.student_photo, selectedStudent.name, 120)}
+                {renderStudentPhoto(selectedStudent.student_photo, selectedStudent.name)}
               </div>
             </div>
 
             <hr style={{ margin: "14px 0" }} />
 
             <div className="card" style={{ marginBottom: 14 }}>
-              <h3 style={{ marginBottom: 10 }}>Personal Information</h3>
-              <table className="table">
+              <h3 style={{ marginTop: 0 }}>Personal Information</h3>
+              <table className="students-table">
                 <tbody>
                   <tr>
                     <td style={{ width: 220 }}><strong>Name</strong></td>
@@ -342,14 +316,18 @@ export default function Students() {
             </div>
 
             <div className="card">
-              <h3 style={{ marginBottom: 10 }}>Outstanding Fees / Flag (Active)</h3>
+              <h3 style={{ marginTop: 0 }}>Outstanding Fees / Flag (Active)</h3>
 
               {viewLoading ? (
-                <div className="muted">Loading flag details...</div>
+                <div style={{ color: "#6b7280", fontWeight: 700 }}>
+                  Loading flag details...
+                </div>
               ) : !selectedFlag ? (
-                <div className="muted">No flag details found.</div>
+                <div style={{ color: "#6b7280", fontWeight: 700 }}>
+                  No flag details found.
+                </div>
               ) : (
-                <table className="table">
+                <table className="students-table">
                   <thead>
                     <tr>
                       <th>School</th>
@@ -367,7 +345,9 @@ export default function Students() {
                         {Number(selectedFlag.amount_owed || 0).toLocaleString()}
                       </td>
                       <td>
-                        <span className="badge badge-danger">{selectedFlag.status || "FLAGGED"}</span>
+                        <span className="badge badge-danger">
+                          {selectedFlag.status || "FLAGGED"}
+                        </span>
                       </td>
                     </tr>
                   </tbody>
@@ -375,7 +355,7 @@ export default function Students() {
               )}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 16 }}>
               <button className="btn" type="button" onClick={closeModal}>
                 Close
               </button>

@@ -1,167 +1,165 @@
 import { useEffect, useState } from "react";
 import { api } from "../../services/api";
+import "../../assets/css/dashboard.css"; // ✅ ensures shared styles
 
 export default function FlagAudit() {
   const [logs, setLogs] = useState([]);
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
 
-  // ======================================
+  // ======================
   // Load audit logs
-  // ======================================
-  const loadLogs = async (query = "") => {
-    try {
-      setLoading(true);
-      setError("");
-
-      const res = await api(`/flags/audit${query ? `?q=${query}` : ""}`);
-      setLogs(res.logs || []);
-    } catch (err) {
-      console.error("AUDIT LOAD ERROR:", err);
-      setError("Failed to load audit logs");
-    } finally {
-      setLoading(false);
-    }
+  // ======================
+  const load = async () => {
+    const data = await api("/flags/audit");
+    setLogs(data.logs || []);
   };
 
   useEffect(() => {
-    loadLogs();
+    load();
   }, []);
 
-  // ======================================
-  // Search handler
-  // ======================================
-  const handleSearch = (e) => {
-    const value = e.target.value;
-    setSearch(value);
-    loadLogs(value);
-  };
+  // ======================
+  // Filter (same UX as Parents)
+  // ======================
+  const filtered = logs.filter((l) => {
+    const t = search.toLowerCase().trim();
+    return (
+      l.student?.toLowerCase().includes(t) ||
+      l.parent?.toLowerCase().includes(t) ||
+      l.school?.toLowerCase().includes(t) ||
+      l.action?.toLowerCase().includes(t) ||
+      l.performed_by?.toLowerCase().includes(t)
+    );
+  });
 
-  // ======================================
-  // CSV Export (NO BACKEND DEPENDENCY)
-  // ======================================
+  // ======================
+  // Export CSV
+  // ======================
   const exportCSV = () => {
-    if (!logs.length) return;
+    if (!filtered.length) return;
 
     const headers = [
       "Student",
       "Parent",
       "School",
-      "Action",
       "Amount",
       "Currency",
-      "Performed By",
+      "Action",
+      "By",
       "Date",
     ];
 
-    const rows = logs.map((l) => [
+    const rows = filtered.map((l) => [
       l.student,
       l.parent || "",
       l.school,
-      l.action,
       l.amount_owed,
       l.currency,
+      l.action,
       l.performed_by,
       new Date(l.created_at).toLocaleString(),
     ]);
 
     const csv =
       [headers, ...rows]
-        .map((row) =>
-          row
-            .map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`)
-            .join(",")
+        .map((r) =>
+          r.map((v) => `"${String(v ?? "").replace(/"/g, '""')}"`).join(",")
         )
         .join("\n");
 
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
 
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `flag_audit_logs_${new Date()
-      .toISOString()
-      .slice(0, 10)}.csv`;
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "flag_audit_log.csv";
+    a.click();
 
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
   };
 
+  // ======================
+  // Render
+  // ======================
   return (
     <div className="card">
-      <div className="row-between">
+      {/* HEADER */}
+      <div className="card-head">
         <div>
-          <h2>Flag Audit Log</h2>
-          <p className="muted">
-            System audit trail (last 92 days). Read-only.
-          </p>
+          <h2 className="card-title">Flag Audit Log</h2>
+          <div className="hint">
+            Read-only system trail of all flag actions (last 92 days)
+          </div>
         </div>
 
-        <button className="btn secondary" onClick={exportCSV}>
-          Export CSV
-        </button>
+        <div className="card-actions">
+          <button
+            className="btn btn-outline"
+            onClick={exportCSV}
+            disabled={!filtered.length}
+          >
+            Export CSV
+          </button>
+        </div>
       </div>
 
+      {/* SEARCH */}
       <input
         className="input"
-        placeholder="Search student, school, parent or action..."
+        placeholder="Search student, parent, school or action..."
         value={search}
-        onChange={handleSearch}
-        style={{ marginTop: 12 }}
+        onChange={(e) => setSearch(e.target.value)}
+        style={{ maxWidth: 600, marginBottom: 14 }}
       />
 
-      {loading && <p style={{ marginTop: 20 }}>Loading...</p>}
-      {error && <p className="danger">{error}</p>}
+      {/* TABLE */}
+      <div className="table-wrap">
+        <table className="table">
+          <thead>
+            <tr>
+              <th>Student</th>
+              <th>Parent</th>
+              <th>School</th>
+              <th>Amount</th>
+              <th>Action</th>
+              <th>Performed By</th>
+              <th>Date</th>
+            </tr>
+          </thead>
 
-      {!loading && !logs.length && (
-        <p style={{ marginTop: 20 }}>No audit logs found</p>
-      )}
-
-      {!loading && logs.length > 0 && (
-        <div className="table-wrapper" style={{ marginTop: 16 }}>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>Student</th>
-                <th>Parent</th>
-                <th>School</th>
-                <th>Action</th>
-                <th>Amount</th>
-                <th>Currency</th>
-                <th>Performed By</th>
-                <th>Date</th>
+          <tbody>
+            {filtered.map((l, i) => (
+              <tr key={i}>
+                <td>{l.student}</td>
+                <td>{l.parent || "-"}</td>
+                <td>{l.school}</td>
+                <td>
+                  {l.currency} {Number(l.amount_owed).toLocaleString()}
+                </td>
+                <td>
+                  <span
+                    className={`badge ${
+                      l.action === "CLEARED"
+                        ? "badge-success"
+                        : "badge-danger"
+                    }`}
+                  >
+                    {l.action}
+                  </span>
+                </td>
+                <td>{l.performed_by}</td>
+                <td>{new Date(l.created_at).toLocaleString()}</td>
               </tr>
-            </thead>
-            <tbody>
-              {logs.map((l) => (
-                <tr key={l.id}>
-                  <td>{l.student}</td>
-                  <td>{l.parent || "-"}</td>
-                  <td>{l.school}</td>
-                  <td>
-                    <span
-                      className={`badge ${
-                        l.action === "CLEARED" ? "success" : "danger"
-                      }`}
-                    >
-                      {l.action}
-                    </span>
-                  </td>
-                  <td>{l.amount_owed}</td>
-                  <td>{l.currency}</td>
-                  <td>{l.performed_by}</td>
-                  <td>
-                    {new Date(l.created_at).toLocaleDateString()}{" "}
-                    {new Date(l.created_at).toLocaleTimeString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+            ))}
+
+            {!filtered.length && (
+              <tr>
+                <td colSpan="7">No audit records found</td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

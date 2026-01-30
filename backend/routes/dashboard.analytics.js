@@ -30,33 +30,35 @@ module.exports = (pool, authMiddleware) => {
       /* ===============================
          MONTHLY TOTAL AMOUNT
       =============================== */
-      const [monthly] = await pool.query(
-        `
-        SELECT
-          DATE_FORMAT(f.created_at, '%Y-%m') AS month,
-          SUM(f.amount_owed) AS total
-        FROM flags f
-        ${where}
-        GROUP BY month
-        ORDER BY month ASC
-        `,
-        params
-      );
+    const [monthly] = await pool.query(
+  `
+  SELECT
+    DATE_FORMAT(f.created_at, '%Y-%m') AS month,
+    SUM(CASE WHEN f.status = 'CLEARED' THEN f.amount_owed ELSE 0 END) AS cleared,
+    SUM(CASE WHEN f.status = 'FLAGGED' THEN f.amount_owed ELSE 0 END) AS flagged
+  FROM flags f
+  ${where}
+  GROUP BY month
+  ORDER BY month ASC
+  `,
+  params
+);
 
-      /* ===============================
-         AMOUNT BY CURRENCY
-      =============================== */
-      const [currency] = await pool.query(
-        `
-        SELECT
-          f.currency,
-          SUM(f.amount_owed) AS total
-        FROM flags f
-        ${where}
-        GROUP BY f.currency
-        `,
-        params
-      );
+    /* ===============================
+   AMOUNT BY CURRENCY (FLAGGED vs CLEARED)
+=============================== */
+const [currency] = await pool.query(
+  `
+  SELECT
+    f.currency,
+    SUM(CASE WHEN f.status = 'FLAGGED' THEN f.amount_owed ELSE 0 END) AS flagged,
+    SUM(CASE WHEN f.status = 'CLEARED' THEN f.amount_owed ELSE 0 END) AS cleared
+  FROM flags f
+  ${where}
+  GROUP BY f.currency
+  `,
+  params
+);
 
       /* ===============================
          FLAG vs CLEAR TREND (AMOUNT)

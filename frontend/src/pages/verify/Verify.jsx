@@ -1,5 +1,7 @@
 import { useState } from "react";
 import { api } from "../../services/api";
+import "../../assets/css/verify.css";
+
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
@@ -159,6 +161,8 @@ export default function Verify() {
 
   return (
     <>
+          <div className="verify-page">
+    
       {/* SEARCH */}
       <div className="card">
         <h2>Registry Lookup</h2>
@@ -174,7 +178,7 @@ export default function Verify() {
           </div>
 
           <div className="form-actions">
-            <button className="btn btn-primary" type="submit" disabled={loading}>
+            <button className="btn btn-primary" type="submit" disabled={loading}  style={{ width: 200 }}>
               {loading ? "Searching..." : "Search Registry"}
             </button>
           </div>
@@ -423,6 +427,9 @@ export default function Verify() {
           </div>
         </div>
       )}
+    </div>
+
+
     </>
   );
 }
