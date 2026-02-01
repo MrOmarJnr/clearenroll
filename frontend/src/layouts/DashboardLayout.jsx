@@ -40,8 +40,19 @@ export default function DashboardLayout() {
     }
   };
 
+  
+
   const user = getUserSafe();
   const role = user?.role;
+const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+
+const profileImage =
+  user?.profile_photo
+    ? user.profile_photo.startsWith("http")
+      ? user.profile_photo
+      : `${API_BASE}/${user.profile_photo}`
+    : null;
+  
 
   const ROLE_ALLOW = useMemo(
     () => ({
@@ -65,6 +76,9 @@ export default function DashboardLayout() {
         "/students/:id/edit",
         "/flags/audit",
         "/dashboard/analytics",
+        "/register",
+        "/users",
+        "/audit/login-logs",
       ],
 
       SCHOOL_ADMIN: [
@@ -124,11 +138,25 @@ export default function DashboardLayout() {
       }
     }
   }, [role, location?.pathname]);
+const logout = async () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (token) {
+      const payload = jwtDecode(token);
+      await fetch(`${API_BASE}/auth/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: payload.userId }),
+      });
+    }
+  } catch (err) {
+    console.warn("Logout log failed:", err);
+  }
 
-  const logout = () => {
-    localStorage.removeItem("token");
-    navigate("/login", { replace: true });
-  };
+  localStorage.removeItem("token");
+  navigate("/login", { replace: true });
+};
+
 
   // ====== AdminHub responsive defaults (from script.js) ======
   useEffect(() => {
@@ -171,6 +199,9 @@ export default function DashboardLayout() {
 
   // helper to style active li like AdminHub
   const sideLinkClass = ({ isActive }) => (isActive ? "active" : "");
+
+
+
 
   return (
     <>
@@ -281,6 +312,34 @@ export default function DashboardLayout() {
               </NavLink>
             </li>
           )}
+
+          {isAllowed("/register") && (
+            <li className={sideLinkClass({ isActive: location.pathname.startsWith("/register") })}>
+              <NavLink to="/register">
+                <i className="bx bxs-user-plus" />
+                <span className="text">Register School</span>
+              </NavLink>
+            </li>
+          )}
+          
+          {isAllowed("/users") && (
+            <li className={sideLinkClass({ isActive: location.pathname.startsWith("/users") })}>
+              <NavLink to="/users">
+                <i className="bx bxs-user-plus" />
+                <span className="text">Users</span>
+              </NavLink>
+            </li>
+          )}
+
+                   {isAllowed("/audit/login-logs") && (
+            <li className={sideLinkClass({ isActive: location.pathname.startsWith("/audit/login-logs") })}>
+              <NavLink to="/audit/login-logs">
+                <i className="bx bxs-user-plus" />
+                <span className="text">Login Logs</span>
+              </NavLink>
+            </li>
+          )}
+
         </ul>
 
         <ul className="side-menu">
@@ -309,14 +368,29 @@ export default function DashboardLayout() {
 
     <div className="profile-wrapper">
       <div
-        className="profile"
-        onClick={() => setProfileOpen((v) => !v)}
-      >
-        <div className="avatar">{profileInitial}</div>
-        <span className="profile-name-inline">
-          {user?.full_name || "User"}
-        </span>
-      </div>
+  className="profile"
+  onClick={() => setProfileOpen((v) => !v)}
+>
+  {profileImage ? (
+    <img
+      src={profileImage}
+      alt="Profile"
+      style={{
+        width: 40,
+        height: 40,
+        borderRadius: "50%",
+        objectFit: "cover",
+      }}
+    />
+  ) : (
+    <div className="avatar">{profileInitial}</div>
+  )}
+
+  <span className="profile-name-inline">
+    {user?.full_name || "User"}
+  </span>
+</div>
+
 
       {profileOpen && (
         <div className="profile-dropdown">

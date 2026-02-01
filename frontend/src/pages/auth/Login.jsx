@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Navigate } from "react-router-dom";
+import { useNavigate, Navigate, useSearchParams } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
 import "../../assets/css/util.css";
@@ -11,6 +11,10 @@ import backgroundImage from "../../assets/images/backgroundimg.jpeg";
 export default function Login() {
   const navigate = useNavigate();
   const existingToken = localStorage.getItem("token");
+
+  // ✅ NEW: read query params (for activation success)
+  const [searchParams] = useSearchParams();
+  const activated = searchParams.get("activated");
 
   if (existingToken) {
     return <Navigate to="/dashboard" replace />;
@@ -58,13 +62,30 @@ export default function Login() {
 
   return (
     <div className="auth-container">
-
       {/* LEFT PANEL */}
       <div className="auth-left">
         <h2>Clear Enroll School Portal</h2>
         <p style={{ color: "#f4f4f4" }}>Sign in to your account</p>
 
         <form className="login100-form" onSubmit={handleLogin}>
+
+          {/* ✅ ACTIVATION SUCCESS MESSAGE */}
+          {activated && (
+            <div
+              style={{
+                background: "#e6fffa",
+                color: "#065f46",
+                padding: "10px 14px",
+                borderRadius: 8,
+                marginBottom: 15,
+                fontWeight: 600,
+                fontSize: 14,
+              }}
+            >
+              ✅ Account activated successfully. You may now sign in.
+            </div>
+          )}
+
           <div className="wrap-input100">
             <input
               className="input100"
@@ -120,12 +141,9 @@ export default function Login() {
         </form>
 
         {/* FOOTER */}
-
-         <div className="auth-footer-disclaimer">
-        
-          By signing in to this software you are agreeing to the use and consent of the contents on the software. 
-            Any misuse of the information provided on this software is liable to legal actions.
-        
+        <div className="auth-footer-disclaimer">
+          By signing in to this software you are agreeing to the use and consent of the contents on the software.
+          Any misuse of the information provided on this software is liable to legal actions.
         </div>
 
         <div className="auth-footer">
@@ -137,10 +155,6 @@ export default function Login() {
             Powered by <strong>LEF Signature</strong>
           </span>
         </div>
-
-       
-
-       
       </div>
 
       {/* RIGHT IMAGE PANEL */}

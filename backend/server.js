@@ -17,6 +17,12 @@ app.use(
   express.static(path.join(__dirname, "uploads/students"))
 );
 
+// static serve user uploads
+app.use(
+  "/uploads/users",
+  express.static(path.join(__dirname, "uploads/users"))
+);
+
 const authMiddleware = require("./middleware/auth");
 
 // ======================
@@ -26,6 +32,13 @@ const uploadDir = path.join(__dirname, "uploads", "students");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
+
+const userUploadDir = path.join(__dirname, "uploads", "users");
+if (!fs.existsSync(userUploadDir)) {
+  fs.mkdirSync(userUploadDir, { recursive: true });
+}
+
+
 
 // ======================
 // Multer config (store file with original extension)
@@ -39,6 +52,23 @@ const storage = multer.diskStorage({
     cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
   },
 });
+
+
+// ======================
+// Multer config for USER profile photos
+// ======================
+const userStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, userUploadDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname || "");
+    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+  },
+});
+
+const uploadUser = multer({ storage: userStorage })
+
 
 const upload = multer({ storage });
 
@@ -72,7 +102,9 @@ app.get("/health", (req, res) => {
 // ======================
 // Mount grouped routes
 // ======================
-app.use("/auth", require("./routes/auth")(pool));
+app.use("/auth", require("./routes/auth")(pool, uploadUser));
+app.use("/users", require("./routes/users")(pool, authMiddleware));
+app.use("/audit", require("./routes/audit")(pool, authMiddleware));
 app.use("/schools", require("./routes/schools")(pool, authMiddleware));
 app.use("/parents", require("./routes/parents")(pool, authMiddleware));
 app.use("/students", require("./routes/students")(pool, authMiddleware, upload));

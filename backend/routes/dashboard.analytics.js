@@ -13,9 +13,9 @@ module.exports = (pool, authMiddleware) => {
         : "WHERE f.reported_by_school_id = ?";
       const params = isSuperAdmin ? [] : [schoolId];
 
-      /* ===============================
-         PIE: FLAGGED vs CLEARED (AMOUNT)
-      =============================== */
+     
+        /*  PIE: FLAGGED vs CLEARED  */
+
       const [[pie]] = await pool.query(
         `
         SELECT
@@ -27,9 +27,8 @@ module.exports = (pool, authMiddleware) => {
         params
       );
 
-      /* ===============================
-         MONTHLY TOTAL AMOUNT
-      =============================== */
+       
+      /*   MONTHLY TOTAL AMOUNT */
     const [monthly] = await pool.query(
   `
   SELECT
@@ -44,9 +43,8 @@ module.exports = (pool, authMiddleware) => {
   params
 );
 
-    /* ===============================
-   AMOUNT BY CURRENCY (FLAGGED vs CLEARED)
-=============================== */
+     
+        /*  AMOUNT BY CURRENCY  */
 const [currency] = await pool.query(
   `
   SELECT
@@ -60,9 +58,8 @@ const [currency] = await pool.query(
   params
 );
 
-      /* ===============================
-         FLAG vs CLEAR TREND (AMOUNT)
-      =============================== */
+       
+         /*FLAG vs CLEAR TREND (AMOUNT) */
       const [trend] = await pool.query(
         `
         SELECT

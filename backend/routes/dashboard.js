@@ -5,9 +5,9 @@ module.exports = (pool, authMiddleware) => {
 
   router.get("/", authMiddleware, async (req, res) => {
     try {
-      // ======================
+    
       // COUNTS (UNCHANGED)
-      // ======================
+
       const [[schools]] = await pool.query(
         "SELECT COUNT(*) AS total FROM schools"
       );
@@ -24,9 +24,9 @@ module.exports = (pool, authMiddleware) => {
         "SELECT COUNT(*) AS total FROM duplicate_reviews WHERE decision IS NULL"
       );
 
-      // ======================
+
       // RECENT FLAGS (LEAVE AS IS)
-      // ======================
+
       const [recentFlags] = await pool.query(`
         SELECT 
           f.id,
@@ -44,9 +44,9 @@ module.exports = (pool, authMiddleware) => {
         LIMIT 5
       `);
 
-      // ======================
-      // ✅ MY FLAG ACTIVITY (FIXED)
-      // ======================
+    
+      // MY FLAG ACTIVITY (FIXED)
+      
       let myFlagActivityQuery = `
         SELECT
           CONCAT(s.first_name,' ',s.last_name) AS student,
@@ -77,7 +77,7 @@ module.exports = (pool, authMiddleware) => {
         req.user.userId,
       ];
 
-      // 🔒 Include legacy / school-created flags
+      //  Include legacy / school-created flags
       if (req.user.role === "SCHOOL_ADMIN") {
         myFlagActivityQuery += `
           OR (
@@ -97,10 +97,6 @@ module.exports = (pool, authMiddleware) => {
         myFlagActivityQuery,
         params
       );
-
-      // ======================
-      // RESPONSE
-      // ======================
       res.json({
         cards: {
           schools: schools.total,

@@ -19,6 +19,19 @@ module.exports = (pool, authMiddleware) => {
       query = query.toUpperCase();
     }
 
+    // ======================
+    // ✅ ADDITION: Detect DOB in DD-MM-YYYY format
+    // ======================
+    let dob = null;
+    const dobRegex = /^(\d{2})-(\d{2})-(\d{4})$/;
+    const dobMatch = query.match(dobRegex);
+
+    if (dobMatch) {
+      const [, dd, mm, yyyy] = dobMatch;
+      // Convert to MySQL format
+      dob = `${yyyy}-${mm}-${dd}`;
+    }
+
     try {
       // ======================
       // 1) STUDENTS (PRIMARY)
@@ -48,10 +61,17 @@ module.exports = (pool, authMiddleware) => {
           OR p.full_name LIKE ?
           OR p.phone = ?
           OR p.ghana_card_number = ?
+          OR s.date_of_birth = ?   -- ✅ ADDITION (DOB support)
 
         ORDER BY s.id DESC
         `,
-        [`%${query}%`, `%${query}%`, query, query]
+        [
+          `%${query}%`,
+          `%${query}%`,
+          query,
+          query,
+          dob, // ✅ ADDITION (null unless query is a DOB)
+        ]
       );
 
       if (!students.length) {

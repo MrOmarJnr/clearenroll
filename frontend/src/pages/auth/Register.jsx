@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
-import "../../assets/css/util.css";
-import "../../assets/css/main.css";
-import "../../assets/css/auth-layout.css";
+import "../../assets/css/create-records.css"; // ⬅️ your pasted CSS file
 
 export default function Register() {
-  // ===== EXISTING STATE (UNCHANGED) =====
+  // ===== STATE (UNCHANGED) =====
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -12,18 +10,12 @@ export default function Register() {
   const [schools, setSchools] = useState([]);
   const [error, setError] = useState("");
 
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+
   const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
-  // ===== EXISTING EFFECTS (UNCHANGED) =====
-  useEffect(() => {
-    const inputs = document.querySelectorAll(".input100");
-    inputs.forEach((input) => {
-      if (input.value.trim() !== "") {
-        input.classList.add("has-val");
-      }
-    });
-  }, []);
-
+  // ===== LOAD SCHOOLS =====
   useEffect(() => {
     const loadSchools = async () => {
       try {
@@ -38,7 +30,16 @@ export default function Register() {
     loadSchools();
   }, [API_BASE]);
 
-  // ===== EXISTING SUBMIT HANDLER (UNCHANGED) =====
+  // ===== PHOTO =====
+  const handlePhotoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setProfilePhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
+
+  // ===== SUBMIT =====
   const handleRegister = async (e) => {
     e.preventDefault();
     setError("");
@@ -47,87 +48,73 @@ export default function Register() {
       setError("Passwords do not match");
       return;
     }
+
     if (!schoolId) {
       setError("Please select a school");
       return;
     }
 
     try {
+      const formData = new FormData();
+      formData.append("email", email);
+      formData.append("password", password);
+      formData.append("confirmPassword", confirmPassword);
+      formData.append("school_id", schoolId);
+
+      if (profilePhoto) {
+        formData.append("profile_photo", profilePhoto);
+      }
+
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          password,
-          confirmPassword,
-          school_id: schoolId,
-        }),
+        body: formData,
       });
 
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Registration failed");
 
-      localStorage.setItem("token", data.token);
-      window.location.href = "/login";
+      alert("Account created. Activation email sent.");
+          navigate("/users");
     } catch (err) {
       setError(err.message);
     }
   };
 
-  // ===== UI ONLY BELOW =====
   return (
-    <div className="auth-container">
+    <div className="create-records">
+      {/* HEADER */}
+      <div className="create-records-head">
+        <div>
+          <div className="create-records-title">Create User Account</div>
+          <div className="create-records-subtitle">
+            School administrator onboarding
+          </div>
+        </div>
+      </div>
 
-      {/* LEFT PANEL */}
-      <div className="auth-left">
-        <h2>Create Account</h2>
-        <p>Register to access the Clear Enroll System</p>
+      {/* STEPPER */}
+      <div className="stepper">
+        <div className="step active">Account</div>
+    
+      </div>
 
-        <form className="login100-form" onSubmit={handleRegister}>
+      {/* FORM */}
+      <form onSubmit={handleRegister}>
+        <div className="form-section">
+          <h3>Account Information</h3>
 
-          {/* Email */}
-          <div className="wrap-input100">
+          <div className="form-grid">
             <input
-              className="input100"
+              className="input"
               type="email"
+              placeholder="Email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
             />
-            <span className="focus-input100" data-placeholder="Email"></span>
-          </div>
 
-          {/* Password */}
-          <div className="wrap-input100">
-            <input
-              className="input100"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <span className="focus-input100" data-placeholder="Password"></span>
-          </div>
-
-          {/* Confirm Password */}
-          <div className="wrap-input100">
-            <input
-              className="input100"
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-            <span
-              className="focus-input100"
-              data-placeholder="Confirm Password"
-            ></span>
-          </div>
-
-          {/* School */}
-          <div className="wrap-input100">
             <select
-              className="input100"
+              className="select"
               value={schoolId}
               onChange={(e) => setSchoolId(e.target.value)}
               required
@@ -136,45 +123,67 @@ export default function Register() {
                 Select School
               </option>
               {schools.map((s) => (
-                <option key={s.id} value={String(s.id)}>
+                <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
               ))}
             </select>
-            <span className="focus-input100"></span>
+
+            <input
+              className="input"
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+
+            <input
+              className="input"
+              type="password"
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+            />
+
+            <input
+              className="input"
+              type="file"
+              accept="image/*"
+              onChange={handlePhotoChange}
+            />
+
+            {photoPreview && (
+              <div>
+                <img
+                  src={photoPreview}
+                  alt="Preview"
+                  style={{
+                    width: 80,
+                    height: 80,
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                    border: "1px solid #e5e7eb",
+                  }}
+                />
+              </div>
+            )}
           </div>
 
-          {/* Error */}
           {error && (
-            <div style={{ color: "#ffd34e", marginBottom: 15 }}>
+            <div style={{ color: "#dc2626", marginTop: 12 }}>
               {error}
             </div>
           )}
 
-          <button className="login100-form-btn" type="submit">
-            Register Account
-          </button>
-
-          <div className="auth-links">
-            <a href="/login">Already have an account? Login</a>
+          <div className="form-footer">
+            <button type="submit" className="btn btn-primary">
+              Create Account
+            </button>
           </div>
-
-        </form>
-      </div>
-
-      {/* RIGHT IMAGE PANEL */}
-      <div
-        className="auth-right"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1600880292203-757bb62b4baf')",
-        }}
-      >
-        <div className="auth-right-overlay">
-          Secure. Transparent. School-Focused.
         </div>
-      </div>
-
+      </form>
     </div>
   );
 }

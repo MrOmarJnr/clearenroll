@@ -2,11 +2,14 @@ const express = require("express");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const { z } = require("zod");
+const crypto = require("crypto");
 
-module.exports = (pool) => {
+module.exports = (pool, uploadUser) => {
   const router = express.Router();
 
+  // ======================
   // Helpers
+  // ======================
   function signToken(payload) {
     return jwt.sign(payload, process.env.JWT_SECRET, {
       expiresIn: process.env.JWT_EXPIRES_IN || "1d",
@@ -23,8 +26,6 @@ module.exports = (pool) => {
   // ======================
   router.get("/schools", async (req, res) => {
     try {
-      // Assumes you have a `schools` table with at least: id, name
-      // If you also have `status`, you can filter it.
       const [rows] = await pool.query(
         `
         SELECT id, name
@@ -53,7 +54,15 @@ module.exports = (pool) => {
 
     const [rows] = await pool.query(
       `
-      SELECT u.id, u.email, u.password_hash, u.school_id,u.full_name, r.name AS role
+      SELECT 
+        u.id,
+        u.email,
+        u.password_hash,
+        u.school_id,
+        u.full_name,
+        u.profile_photo,
+        u.is_active,
+        r.name AS role
       FROM users u
       JOIN roles r ON r.id = u.role_id
       WHERE u.email = ?
@@ -72,12 +81,33 @@ module.exports = (pool) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
+    // ✅ NEW: block inactive users
+    if (!user.is_active) {
+      return res.status(403).json({
+        message: "Account not activated. Please check your email.",
+      });
+    }
+
+
+      await pool.query(
+          `
+          INSERT INTO user_login_logs (user_id, action, ip_address, user_agent)
+          VALUES (?, 'LOGIN', ?, ?)
+          `,
+          [
+            user.id,
+            req.ip,
+            req.headers["user-agent"] || null,
+          ]
+        );
+
     const token = signToken({
       userId: user.id,
       email: user.email,
       role: user.role,
       school_id: user.school_id || null,
       full_name: user.full_name || null,
+      profile_photo: user.profile_photo || null,
     });
 
     res.json({ token });
@@ -86,67 +116,157 @@ module.exports = (pool) => {
   // ======================
   // Register
   // ======================
-  router.post("/register", async (req, res) => {
-    try {
-      const { email, password, confirmPassword, school_id } = req.body;
+  router.post(
+    "/register",
+    uploadUser.single("profile_photo"),
+    async (req, res) => {
+      try {
+        const { email, password, confirmPassword, school_id } = req.body;
 
-      if (!email || !password || !confirmPassword || !school_id) {
-        return res.status(400).json({ message: "All fields are required" });
-      }
+        const profilePhoto = req.file
+          ? `uploads/users/${req.file.filename}`
+          : null;
 
-      if (password !== confirmPassword) {
-        return res.status(400).json({ message: "Passwords do not match" });
-      }
+        if (!email || !password || !confirmPassword || !school_id) {
+          return res.status(400).json({ message: "All fields are required" });
+        }
 
-      const [exists] = await pool.query("SELECT id FROM users WHERE email = ?", [
-        email,
-      ]);
+        if (password !== confirmPassword) {
+          return res.status(400).json({ message: "Passwords do not match" });
+        }
 
-      if (exists.length) {
-        return res.status(409).json({ message: "User already exists" });
-      }
+        const [exists] = await pool.query(
+          "SELECT id FROM users WHERE email = ?",
+          [email]
+        );
 
-      // Validate school exists
-      const [schoolRows] = await pool.query(
-        "SELECT id FROM schools WHERE id = ? LIMIT 1",
-        [school_id]
-      );
+        if (exists.length) {
+          return res.status(409).json({ message: "User already exists" });
+        }
 
-      if (!schoolRows.length) {
-        return res.status(400).json({ message: "Invalid school selected" });
-      }
+        // Validate school exists
+        const [schoolRows] = await pool.query(
+          "SELECT id FROM schools WHERE id = ? LIMIT 1",
+          [school_id]
+        );
 
-      const passwordHash = await bcrypt.hash(password, 10);
+        if (!schoolRows.length) {
+          return res.status(400).json({ message: "Invalid school selected" });
+        }
+
+        const passwordHash = await bcrypt.hash(password, 10);
 
         const [[role]] = await pool.query(
-        "SELECT id FROM roles WHERE name = 'SCHOOL_ADMIN' LIMIT 1"
+          "SELECT id FROM roles WHERE name = 'SCHOOL_ADMIN' LIMIT 1"
+        );
+
+        if (!role) {
+          return res.status(500).json({ message: "Role not configured" });
+        }
+
+        // ✅ NEW: activation token
+        const activationToken = crypto.randomBytes(32).toString("hex");
+
+        const [result] = await pool.query(
+          `
+          INSERT INTO users 
+            (email, password_hash, role_id, school_id, profile_photo, is_active, activation_token)
+          VALUES (?, ?, ?, ?, ?, 0, ?)
+          `,
+          [
+            email,
+            passwordHash,
+            role.id,
+            school_id,
+            profilePhoto,
+            activationToken,
+          ]
+        );
+
+        // ✅ TEMP: log activation link (replace with email service later)
+        const activationLink = `${process.env.CLIENT_ORIGIN}/activate-account?token=${activationToken}`;
+        console.log("ACTIVATION LINK:", activationLink);
+
+        res.status(201).json({
+          message:
+            "Account created successfully. Please check your email to activate your account.",
+        });
+      } catch (err) {
+        console.error("REGISTER ERROR:", err);
+        res.status(500).json({ message: "Registration failed" });
+      }
+    }
+  );
+
+  // ======================
+  // Activate Account
+  // ======================
+  router.get("/activate", async (req, res) => {
+    const { token } = req.query;
+
+    if (!token) {
+      return res.status(400).send("Invalid activation link");
+    }
+
+    try {
+      const [rows] = await pool.query(
+        `
+        SELECT id FROM users
+        WHERE activation_token = ? AND is_active = 0
+        `,
+        [token]
       );
 
-      if (!role) {
-        return res.status(500).json({ message: "Role not configured" });
+      if (!rows.length) {
+        return res.status(400).send("Activation link expired or invalid");
       }
 
-      const [result] = await pool.query(
+      await pool.query(
         `
-        INSERT INTO users (email, password_hash, role_id, school_id)
-        VALUES (?, ?, ?, ?)
+        UPDATE users
+        SET is_active = 1,
+            activation_token = NULL,
+            activated_at = NOW()
+        WHERE id = ?
         `,
-        [email, passwordHash, role.id, school_id]
+        [rows[0].id]
       );
 
-      const token = signToken({
-        userId: result.insertId,
-        email,
-        role: "SCHOOL",
-        school_id,
-      });
-
-      res.status(201).json({ token });
+      return res.redirect(
+        `${process.env.CLIENT_ORIGIN}/login?activated=1`
+      );
     } catch (err) {
-      console.error("REGISTER ERROR:", err);
-      res.status(500).json({ message: "Registration failed" });
+      console.error("ACTIVATION ERROR:", err);
+      res.status(500).send("Activation failed");
     }
   });
+
+
+  router.post("/logout", async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    if (!userId) return res.sendStatus(200);
+
+    await pool.query(
+      `
+      INSERT INTO user_login_logs (user_id, action, ip_address, user_agent)
+      VALUES (?, 'LOGOUT', ?, ?)
+      `,
+      [
+        userId,
+        req.ip,
+        req.headers["user-agent"] || null,
+      ]
+    );
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error("LOGOUT LOG ERROR:", err);
+    res.sendStatus(200);
+  }
+});
+
 
   return router;
 };

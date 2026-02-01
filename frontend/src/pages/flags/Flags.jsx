@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
 import { api } from "../../services/api";
-import "../../assets/css/students.css"; // reuse same visual language
+import "../../assets/css/students.css"; 
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
 

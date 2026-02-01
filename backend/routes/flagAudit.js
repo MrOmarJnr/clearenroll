@@ -26,7 +26,7 @@ module.exports = (pool, authMiddleware) => {
           l.action,
           l.amount_owed,
           l.currency,
-          u.email AS performed_by,
+          u.full_name AS performed_by,
           l.created_at
         FROM flag_audit_logs l
         JOIN students s ON s.id = l.student_id

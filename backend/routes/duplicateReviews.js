@@ -25,7 +25,7 @@ module.exports = (pool, auth) => {
 
       res.json(rows);
     } catch (err) {
-      console.error("❌ FETCH DUPLICATES FAILED:", err);
+      console.error("FETCH DUPLICATES FAILED:", err);
       res.status(500).json({ message: "Failed to load duplicate reviews" });
     }
   });
@@ -52,11 +52,11 @@ module.exports = (pool, auth) => {
         [decision, reason, req.user.id, id]
       );
 
-      console.log(`✅ DUPLICATE REVIEW ${id} RESOLVED → ${decision}`);
+      console.log(` DUPLICATE REVIEW ${id} RESOLVED → ${decision}`);
 
       res.json({ success: true });
     } catch (err) {
-      console.error("❌ RESOLVE DUPLICATE FAILED:", err);
+      console.error(" RESOLVE DUPLICATE FAILED:", err);
       res.status(500).json({ message: "Failed to resolve duplicate review" });
     }
   });

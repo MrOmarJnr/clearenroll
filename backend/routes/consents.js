@@ -23,11 +23,11 @@ module.exports = (pool, auth) => {
         [student_id, requesting_school_id]
       );
 
-      console.log("🟡 CONSENT REQUESTED:", { student_id, requesting_school_id });
+      console.log(" CONSENT REQUESTED:", { student_id, requesting_school_id });
 
       res.json({ success: true });
     } catch (err) {
-      console.error("❌ CONSENT REQUEST FAILED:", err);
+      console.error(" CONSENT REQUEST FAILED:", err);
       res.status(500).json({ message: "Failed to request consent" });
     }
   });
@@ -54,7 +54,7 @@ module.exports = (pool, auth) => {
 
       res.json(rows);
     } catch (err) {
-      console.error("❌ FETCH CONSENTS FAILED:", err);
+      console.error(" FETCH CONSENTS FAILED:", err);
       res.status(500).json({ message: "Failed to load consents" });
     }
   });
@@ -118,11 +118,11 @@ router.post("/:id/reject", auth, async (req, res) => {
       [req.user.id, id]
     );
 
-    console.log("❌ CONSENT REJECTED:", id);
+    console.log(" CONSENT REJECTED:", id);
 
     res.json({ success: true });
   } catch (err) {
-    console.error("❌ REJECT CONSENT FAILED:", err);
+    console.error(" REJECT CONSENT FAILED:", err);
     res.status(500).json({ message: "Failed to reject consent" });
   }
 });

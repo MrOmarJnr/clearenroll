@@ -70,11 +70,11 @@ module.exports = (pool, auth) => {
         ]
       );
 
-      console.log("⚠️ DISPUTE CREATED:", { student_id, finalRaisedBy });
+      console.log(" DISPUTE CREATED:", { student_id, finalRaisedBy });
 
       res.json({ success: true });
     } catch (err) {
-      console.error("❌ CREATE DISPUTE FAILED:", err);
+      console.error(" CREATE DISPUTE FAILED:", err);
       res.status(500).json({ message: "Failed to create dispute" });
     }
   });
@@ -103,14 +103,14 @@ module.exports = (pool, auth) => {
 
       res.json(rows);
     } catch (err) {
-      console.error("❌ FETCH DISPUTES FAILED:", err);
+      console.error(" FETCH DISPUTES FAILED:", err);
       res.status(500).json({ message: "Failed to load disputes" });
     }
   });
 
   /**
    * POST /disputes/:id/review
-   * Previous school / Admin marks dispute as UNDER_REVIEW
+   
    */
   router.post("/:id/review", auth, async (req, res) => {
     const { id } = req.params;
@@ -126,11 +126,11 @@ module.exports = (pool, auth) => {
         [id]
       );
 
-      console.log("🔍 DISPUTE UNDER REVIEW:", id);
+      console.log(" DISPUTE UNDER REVIEW:", id);
 
       res.json({ success: true });
     } catch (err) {
-      console.error("❌ DISPUTE REVIEW FAILED:", err);
+      console.error(" DISPUTE REVIEW FAILED:", err);
       res.status(500).json({ message: "Failed to update dispute" });
     }
   });
@@ -162,11 +162,11 @@ module.exports = (pool, auth) => {
         [status, resolution_note || null, req.user.id, id]
       );
 
-      console.log("✅ DISPUTE RESOLVED:", { id, status });
+      console.log(" DISPUTE RESOLVED:", { id, status });
 
       res.json({ success: true });
     } catch (err) {
-      console.error("❌ RESOLVE DISPUTE FAILED:", err);
+      console.error(" RESOLVE DISPUTE FAILED:", err);
       res.status(500).json({ message: "Failed to resolve dispute" });
     }
   });

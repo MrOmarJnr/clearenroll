@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 
 /* ================= AUTH ================= */
 import ProtectedRoute from "./auth/ProtectedRoute";
+import ActivateAccount from "./pages/auth/ActivateAccount";
 
 /* ================= LAYOUT ================= */
 import DashboardLayout from "./layouts/DashboardLayout";
@@ -9,6 +10,8 @@ import DashboardLayout from "./layouts/DashboardLayout";
 /* ================= AUTH PAGES ================= */
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import LoginLogs from "./pages/audit/LoginLogs";
+
 
 /* ================= CORE ================= */
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -39,6 +42,7 @@ import CreateFlag from "./pages/flags/CreateFlag";
 import Consents from "./pages/consents/Consents";
 import DuplicateReviews from "./pages/duplicates/DuplicateReviews";
 import Schools from "./pages/schools/Schools";
+import Users from "./pages/users/Users";
 
 /* ================= Audit ================= */
 import FlagAudit from "./pages/flags/FlagAudit";
@@ -53,7 +57,8 @@ export default function App() {
 
         {/* ================= PUBLIC ================= */}
         <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+    
+        <Route path="/activate-account" element={<ActivateAccount />} />
         {/* ================= PROTECTED ================= */}
         <Route
           element={
@@ -69,6 +74,9 @@ export default function App() {
           
         <Route path="/dashboard/analytics" element={<DashboardAnalytics />} />
 
+          <Route path="/register" element={<Register />} />
+          <Route path="/users" element={<Users />} />
+          <Route path="/audit/login-logs" element={<LoginLogs />} />
 
 
 

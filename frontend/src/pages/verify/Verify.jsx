@@ -142,14 +142,18 @@ export default function Verify() {
   const closeModal = () => setSelectedStudent(null);
 
   // Helper: format DOB a bit cleaner (keeps your UI intact)
-  const formatDob = (dob) => {
-    if (!dob) return "-";
-    // Works for "YYYY-MM-DD" and ISO strings
-    const s = String(dob);
-    if (s.includes("T")) return s.split("T")[0];
-    return s;
-  };
+const formatDob = (dob) => {
+  if (!dob) return "-";
 
+  const d = new Date(dob);
+  if (isNaN(d)) return dob; // fallback if date is weird
+
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = d.getFullYear();
+
+  return `${day}-${month}-${year}`;
+};
   // Breakdown: group by Parent, then list each flag
   const flagsByParent = selectedFlags.reduce((acc, f) => {
     const key = f.parent || "Unknown Parent";
