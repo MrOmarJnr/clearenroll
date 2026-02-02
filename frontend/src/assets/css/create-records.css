@@ -74,6 +74,21 @@
   grid-template-columns: repeat(2, 1fr);
   gap: 14px;
 }
+.form-grid .input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.label {
+  font-size: 15px;
+  color: #1a1a1c;
+}
 
 @media (max-width: 700px) {
   .form-grid {

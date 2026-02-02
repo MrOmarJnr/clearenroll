@@ -4,7 +4,7 @@ module.exports = (pool, auth) => {
   const router = express.Router();
 
   /**
-   * Helper: check if student has an active dispute
+   * check if student has an active dispute
    */
   async function getActiveDispute(studentId) {
     const [rows] = await pool.query(
@@ -110,7 +110,6 @@ module.exports = (pool, auth) => {
 
   /**
    * POST /disputes/:id/review
-   
    */
   router.post("/:id/review", auth, async (req, res) => {
     const { id } = req.params;

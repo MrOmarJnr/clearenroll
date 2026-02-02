@@ -134,14 +134,14 @@ export default function Flags() {
   return (
     <div className="card">
       {/* PAGE HEADER */}
-      <div className="students-head">
-        <div>
-          <h1 className="students-title">Flags Registry</h1>
-          <div className="students-subtitle">
-            All fee-related flags recorded across schools
+       <div className="page-head">
+          <div>
+            <h1 className="page-title">Flags Registry</h1>
+            <div className="page-subtitle">
+              View all flagged students and their fee status
+            </div>
           </div>
         </div>
-      </div>
 
       {error && <div className="danger">{error}</div>}
 
@@ -183,7 +183,7 @@ export default function Flags() {
               return (
                 <tr key={f.id}>
                   <td>{renderStudentPhoto(f.student_photo, f.student)}</td>
-                  <td>{f.student || "-"}</td>
+                  <td style={{ width: 250 }}>{f.student || "-"}</td>
                   <td>{f.parent || "-"}</td>
                   <td>{f.reported_by || "-"}</td>
                   <td>{f.school_location || "-"}</td>
@@ -199,7 +199,7 @@ export default function Flags() {
                     )}
                   </td>
 
-                  <td className="td-right">
+                  <td className="td-center" style={{ width: 100 }}>
                     {canClear && (
                       <button
                         className="btn btn-danger"

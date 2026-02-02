@@ -4,8 +4,8 @@ const { z } = require("zod");
 module.exports = (pool, authMiddleware, upload) => {
   const router = express.Router();
 
-  // ✅ UPDATED: student-first flow schema (NO parent_id required here)
-  // We accept strings because multipart/form-data sends strings.
+
+ 
   const studentCreateSchema = z.object({
     first_name: z.string().min(2),
     last_name: z.string().min(2),
@@ -17,7 +17,7 @@ module.exports = (pool, authMiddleware, upload) => {
     student_school_id: z.string().optional(),
   });
 
-  // list (✅ only my school for SCHOOL_ADMIN)
+  // list only my school for SCHOOL_ADMIN
   router.get("/", authMiddleware, async (req, res) => {
     const { role, school_id } = req.user;
 
@@ -39,7 +39,7 @@ module.exports = (pool, authMiddleware, upload) => {
         s.leaving_class,
         s.student_photo,
 
-        -- ✅ NEW: provide latest active FLAGGED info for Students page "Clear"
+        --  NEW: provide latest active FLAGGED info for Students page "Clear"
         (
           SELECT f.id
           FROM flags f
@@ -68,7 +68,7 @@ module.exports = (pool, authMiddleware, upload) => {
 
     const params = [];
 
-    // 🔐 SCHOOL_ADMIN sees ONLY their school
+    //  Show records for only my SCHOOL_ADMIN for only their school
     if (role === "SCHOOL_ADMIN") {
       sql += " WHERE s.current_school_id = ?";
       params.push(school_id);
@@ -117,9 +117,8 @@ module.exports = (pool, authMiddleware, upload) => {
 
       const studentPhotoFilename = req.file ? req.file.filename : null;
 
-      // ======================
-      // 1. DUPLICATE CHECK
-      // ======================
+      // DUPLICATE CHECK
+
       const [matches] = await pool.query(
         `
         SELECT
@@ -142,7 +141,7 @@ module.exports = (pool, authMiddleware, upload) => {
       );
 
       if (matches.length > 0) {
-        console.log("🚨 DUPLICATE DETECTED — WILL CREATE REVIEW");
+        console.log("DUPLICATE DETECTED — WILL CREATE REVIEW");
 
         try {
           const [insertResult] = await pool.query(
@@ -167,9 +166,9 @@ module.exports = (pool, authMiddleware, upload) => {
             ]
           );
 
-          console.log("✅ DUPLICATE REVIEW INSERTED:", insertResult);
+          console.log(" DUPLICATE REVIEW INSERTED:", insertResult);
         } catch (err) {
-          console.error("❌ DUPLICATE REVIEW INSERT FAILED:", err);
+          console.error(" DUPLICATE REVIEW INSERT FAILED:", err);
         }
 
         return res.status(409).json({
@@ -178,9 +177,9 @@ module.exports = (pool, authMiddleware, upload) => {
         });
       }
 
-      // ======================
-      // 2. CREATE STUDENT (NO PARENT YET)
-      // ======================
+  
+      //  CREATE STUDENT 
+    
       const conn = await pool.getConnection();
 
       try {

@@ -5,9 +5,9 @@ export default function LoginLogs() {
   const [logs, setLogs] = useState([]);
   const [search, setSearch] = useState("");
 
-  // ======================
+
   // Load login / logout logs
-  // ======================
+
   const load = async () => {
     const data = await api("/audit/login-logs");
     setLogs(data.logs || []);
@@ -17,9 +17,6 @@ export default function LoginLogs() {
     load();
   }, []);
 
-  // ======================
-  // Filter (same UX as FlagAudit / Parents)
-  // ======================
   const filtered = logs.filter((l) => {
     const t = search.toLowerCase().trim();
     return (
@@ -31,9 +28,9 @@ export default function LoginLogs() {
     );
   });
 
-  // ======================
+
   // Export CSV
-  // ======================
+
   const exportCSV = () => {
     if (!filtered.length) return;
 
@@ -75,9 +72,8 @@ export default function LoginLogs() {
     window.URL.revokeObjectURL(url);
   };
 
-  // ======================
   // Render
-  // ======================
+
   return (
     <div className="card">
       {/* HEADER */}
@@ -117,7 +113,6 @@ export default function LoginLogs() {
               <th>User</th>
               <th>Role</th>
               <th>Action</th>
-              <th>IP Address</th>
               <th>Device</th>
               <th>Date</th>
             </tr>
@@ -145,8 +140,6 @@ export default function LoginLogs() {
                     {l.action}
                   </span>
                 </td>
-
-                <td>{l.ip_address}</td>
 
                 <td style={{ maxWidth: 260 }}>
                   <small>{l.user_agent || "-"}</small>

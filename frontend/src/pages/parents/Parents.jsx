@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
-import "../../assets/css/students.css"; // reuse same visual system
+import "../../assets/css/students.css";
 
 export default function Parents() {
   const [parents, setParents] = useState([]);
@@ -9,9 +9,9 @@ export default function Parents() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // ======================
+
   // Load parents
-  // ======================
+
   const load = async () => {
     setError("");
     try {
@@ -26,9 +26,9 @@ export default function Parents() {
     load();
   }, []);
 
-  // ======================
+
   // Search filter
-  // ======================
+
   const filtered = parents.filter((p) => {
     const t = search.toLowerCase().trim();
     return (
@@ -41,14 +41,14 @@ export default function Parents() {
   return (
     <div className="card">
       {/* ===== Header ===== */}
-      <div className="students-head">
-        <div>
-          <h1 className="students-title">Parents</h1>
-          <div className="students-subtitle">
-            Registered parents and guardians in the system
+       <div className="page-head">
+          <div>
+            <h1 className="page-title">Parent / Guardian Information</h1>
+            <div className="page-subtitle">
+              View parent and guardian details in the system
+            </div>
           </div>
         </div>
-      </div>
 
       {error && <div className="danger">{error}</div>}
 

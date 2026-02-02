@@ -4,9 +4,9 @@ import { useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 import "../../assets/css/create-records.css";
 
-/* ======================
-   AUTH
-====================== */
+
+  // AUTH
+
 function getUserFromToken() {
   const token = localStorage.getItem("token");
   if (!token) return null;
@@ -17,9 +17,9 @@ function getUserFromToken() {
   }
 }
 
-/* ======================
-   SEARCHABLE SCHOOL SELECT
-====================== */
+
+ //  SEARCHABLE SCHOOL SELECT
+
 function SearchableSchoolSelect({ schools, value, onChange }) {
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
@@ -81,9 +81,8 @@ function SearchableSchoolSelect({ schools, value, onChange }) {
   );
 }
 
-/* ======================
-   MAIN
-====================== */
+  // MAIN
+
 export default function CreateRecords() {
   const navigate = useNavigate();
   const user = getUserFromToken();
@@ -144,9 +143,9 @@ export default function CreateRecords() {
     }
   }, [isSuperAdmin, userSchoolId]);
 
-  /* ======================
-     Auto-fill flag info when student selected (RESTORED)
-  ====================== */
+
+     //Auto-fill flag info when student selected (RESTORED)
+
   useEffect(() => {
     if (!flagForm.student_id) return;
 
@@ -162,9 +161,9 @@ export default function CreateRecords() {
     }));
   }, [flagForm.student_id, students]);
 
-  /* ======================
-     SUBMITS
-  ====================== */
+
+  //   SUBMITS
+
   const submitStudent = async (e) => {
     e.preventDefault();
     setError("");
@@ -178,7 +177,6 @@ export default function CreateRecords() {
       const res = await api("/students", { method: "POST", body: fd });
       setCreatedStudentId(res.student_id);
 
-      // ✅ RESTORED: refresh students so the newly created student appears in Flag dropdown
       const stu = await api("/students");
       setStudents(stu.students || []);
 
@@ -203,7 +201,6 @@ export default function CreateRecords() {
         body: JSON.stringify({ parent_id: res.parent_id }),
       });
 
-      // ✅ RESTORED: refresh students again so parent_id is reflected before Flagging
       const stu = await api("/students");
       setStudents(stu.students || []);
 
@@ -239,7 +236,14 @@ export default function CreateRecords() {
     <div className="card create-records">
       <div className="create-records-head">
         <div>
-          <div className="create-records-title">Create Records</div>
+             <div className="page-head">
+          <div>
+            <h1 className="page-title">Create a Record</h1>
+            <div className="page-subtitle">
+             Create a record with three simple steps
+            </div>
+          </div>
+        </div>
           <div className="create-records-subtitle">
             Student → Parent → Fee Flag
           </div>
@@ -322,7 +326,7 @@ export default function CreateRecords() {
                 }
               />
             ) : (
-              <input className="input" disabled value="Your School" />
+              <input className="input school" disabled value="Your School"  />
             )}
 
             <input
@@ -343,6 +347,9 @@ export default function CreateRecords() {
                 })
               }
             />
+            
+         <div className="form-field">
+            <label className="label">Photo</label>
             <input
               type="file"
               className="input"
@@ -353,6 +360,7 @@ export default function CreateRecords() {
                 })
               }
             />
+          </div>
           </div>
 
           <div className="form-footer">

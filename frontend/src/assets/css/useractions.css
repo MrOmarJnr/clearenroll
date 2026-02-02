@@ -1,0 +1,61 @@
+
+.users-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Base button */
+.users-btn {
+  padding: 5px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  background: #fff;
+  white-space: nowrap;
+  max-width: 100px;
+}
+
+/* Toggle */
+.users-btn-toggle {
+  background: #eff6ff;
+  color: #2563eb;
+  border-color: #bfdbfe;
+}
+
+.users-btn-toggle:hover {
+  background: #2563eb;
+  color: #fff;
+}
+
+/* Resend */
+.users-btn-resend {
+  background: #f8fafc;
+  color: #334155;
+  border-color: #e2e8f0;
+}
+
+.users-btn-resend:hover {
+  background: #e2e8f0;
+}
+
+/* Reset (Danger) */
+.users-btn-reset {
+  background: #fef2f2;
+  color: #dc2626;
+  border-color: #fecaca;
+}
+
+.users-btn-reset:hover {
+  background: #dc2626;
+  color: #fff;
+}
+
+/* Disabled */
+.users-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}

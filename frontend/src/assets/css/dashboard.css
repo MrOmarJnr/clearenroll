@@ -201,7 +201,7 @@ html, body {
 
 .card-title {
   margin: 0;
-  font-size: 14px;
+  font-size: 25px;
   font-weight: 700;
 }
 
@@ -376,6 +376,13 @@ html, body {
   align-items: center;
   gap: 10px;
   margin-top: 12px;
+
+}
+
+
+
+.row-actions .input{
+  width: 20%;
 }
 .muted { color: var(--muted); }
 

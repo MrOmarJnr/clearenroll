@@ -3,13 +3,13 @@ const API_URL = import.meta.env.VITE_API_URL || "/api";
 export async function api(path, options = {}) {
   const token = localStorage.getItem("token");
 
-  // ✅ NEW: detect FormData
+  // NEW: detect FormData
   const isFormData = options.body instanceof FormData;
 
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
     headers: {
-      // ❌ do NOT set content-type for FormData
+      // do NOT set content-type for FormData
       ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...(options.headers || {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),

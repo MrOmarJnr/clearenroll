@@ -6,7 +6,7 @@ module.exports = (pool, authMiddleware) => {
   router.get("/", authMiddleware, async (req, res) => {
     try {
     
-      // COUNTS (UNCHANGED)
+      // COUNTS 
 
       const [[schools]] = await pool.query(
         "SELECT COUNT(*) AS total FROM schools"
@@ -25,7 +25,7 @@ module.exports = (pool, authMiddleware) => {
       );
 
 
-      // RECENT FLAGS (LEAVE AS IS)
+      // RECENT FLAGS
 
       const [recentFlags] = await pool.query(`
         SELECT 
@@ -45,7 +45,7 @@ module.exports = (pool, authMiddleware) => {
       `);
 
     
-      // MY FLAG ACTIVITY (FIXED)
+      // MY FLAG ACTIVITY 
       
       let myFlagActivityQuery = `
         SELECT

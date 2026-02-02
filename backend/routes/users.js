@@ -1,12 +1,13 @@
 const express = require("express");
 const crypto = require("crypto");
+const bcrypt = require("bcryptjs");
 
 module.exports = (pool, authMiddleware) => {
   const router = express.Router();
 
-  // ======================
-  // Get Users (Admin)
-  // ======================
+
+  // GET USERS (ADMIN)
+  
   router.get("/", authMiddleware, async (req, res) => {
     try {
       const [rows] = await pool.query(`
@@ -14,14 +15,13 @@ module.exports = (pool, authMiddleware) => {
           u.id,
           u.email,
           u.full_name,
-          u.profile_photo,
-          u.is_active,
-          u.created_at,
           u.last_login_at,
+          u.last_logout_at,
+          u.is_active,
           r.name AS role,
           s.name AS school
         FROM users u
-        JOIN roles r ON r.id = u.role_id
+        LEFT JOIN roles r ON r.id = u.role_id
         LEFT JOIN schools s ON s.id = u.school_id
         ORDER BY u.created_at DESC
       `);
@@ -33,40 +33,41 @@ module.exports = (pool, authMiddleware) => {
     }
   });
 
-  // ======================
-  // Toggle Activation
-  // ======================
-  router.post("/:id/toggle", authMiddleware, async (req, res) => {
-    const { id } = req.params;
 
+  // TOGGLE ACTIVATION
+
+  router.post("/:id/toggle", authMiddleware, async (req, res) => {
     try {
       await pool.query(
         `UPDATE users SET is_active = IF(is_active=1,0,1) WHERE id = ?`,
-        [id]
+        [req.params.id]
       );
 
       res.json({ success: true });
     } catch (err) {
+      console.error("TOGGLE USER ERROR:", err);
       res.status(500).json({ message: "Failed to toggle user" });
     }
   });
 
-  // ======================
-  // Resend Activation
-  // ======================
+  // RESEND ACTIVATION
+
   router.post("/:id/resend-activation", authMiddleware, async (req, res) => {
-    const { id } = req.params;
     const token = crypto.randomBytes(32).toString("hex");
 
     try {
       const [[user]] = await pool.query(
         `SELECT email FROM users WHERE id = ?`,
-        [id]
+        [req.params.id]
       );
+
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
 
       await pool.query(
         `UPDATE users SET activation_token = ? WHERE id = ?`,
-        [token, id]
+        [token, req.params.id]
       );
 
       const link = `${process.env.CLIENT_ORIGIN}/activate-account?token=${token}`;
@@ -74,30 +75,30 @@ module.exports = (pool, authMiddleware) => {
 
       res.json({ success: true });
     } catch (err) {
+      console.error("RESEND ACTIVATION ERROR:", err);
       res.status(500).json({ message: "Failed to resend activation" });
     }
   });
 
-  // ======================
-  // Reset Password
-  // ======================
+
+  // RESET PASSWORD
+
   router.post("/:id/reset-password", authMiddleware, async (req, res) => {
-    const { id } = req.params;
     const tempPassword = crypto.randomBytes(6).toString("hex");
 
-    const bcrypt = require("bcryptjs");
-    const hash = await bcrypt.hash(tempPassword, 10);
-
     try {
+      const hash = await bcrypt.hash(tempPassword, 10);
+
       await pool.query(
         `UPDATE users SET password_hash = ? WHERE id = ?`,
-        [hash, id]
+        [hash, req.params.id]
       );
 
-      console.log(`TEMP PASSWORD FOR USER ${id}:`, tempPassword);
+      console.log(`TEMP PASSWORD FOR USER ${req.params.id}:`, tempPassword);
 
       res.json({ success: true });
     } catch (err) {
+      console.error("RESET PASSWORD ERROR:", err);
       res.status(500).json({ message: "Password reset failed" });
     }
   });

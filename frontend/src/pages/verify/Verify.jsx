@@ -14,9 +14,9 @@ export default function Verify() {
   // Modal selection
   const [selectedStudent, setSelectedStudent] = useState(null);
 
-  // ======================
+
   // Search
-  // ======================
+
   const run = async (e) => {
     e.preventDefault();
     setError("");
@@ -50,27 +50,20 @@ export default function Verify() {
     }
   };
 
-  // ======================
-  // Image helpers (same idea as Flags page)
-  // ======================
+
+  // Image helpers 
+
   const buildPhotoUrl = (photo) => {
     if (!photo) return null;
-
-    // If already a full URL
     if (typeof photo === "string" && (photo.startsWith("http://") || photo.startsWith("https://"))) {
       return photo;
     }
-
-    // If already absolute path
     if (typeof photo === "string" && photo.startsWith("/")) {
       return `${API_URL}${photo}`;
     }
-
-    // Your DB currently stores something like: uploads/students/name.jpg OR just name.jpg
     if (typeof photo === "string" && photo.startsWith("uploads/")) {
       return `${API_URL}/${photo}`;
     }
-
     // Fallback to your standard student upload folder
     return `${API_URL}/uploads/students/${photo}`;
   };
@@ -112,10 +105,9 @@ export default function Verify() {
     );
   };
 
-  // ======================
-  // CRITICAL FIX:
-  // Modal must show ONLY selected student's flags
-  // ======================
+
+  //  show ONLY selected student's flags
+
   const getSelectedRowFlags = () => {
     if (!result || !selectedStudent) return [];
 
@@ -141,12 +133,11 @@ export default function Verify() {
 
   const closeModal = () => setSelectedStudent(null);
 
-  // Helper: format DOB a bit cleaner (keeps your UI intact)
 const formatDob = (dob) => {
   if (!dob) return "-";
 
   const d = new Date(dob);
-  if (isNaN(d)) return dob; // fallback if date is weird
+  if (isNaN(d)) return dob; 
 
   const day = String(d.getDate()).padStart(2, "0");
   const month = String(d.getMonth() + 1).padStart(2, "0");
@@ -169,7 +160,14 @@ const formatDob = (dob) => {
     
       {/* SEARCH */}
       <div className="card">
-        <h2>Registry Lookup</h2>
+       <div className="page-head">
+          <div>
+            <h1 className="page-title">Verify Student Status</h1>
+            <div className="page-subtitle">
+              Verify Eligibility of  student or parent  within the ClearEnroll system
+            </div>
+          </div>
+        </div>
 
         <form onSubmit={run}>
           <div className="form-row">
@@ -312,10 +310,7 @@ const formatDob = (dob) => {
         </>
       )}
 
-      {/* =========================
-          MODAL (FULL, NOT REDUCED)
-          Fix: ONLY selected student totals/breakdown
-         ========================= */}
+      {/* ONLY selected student totals/breakdown*/}
       {selectedStudent && (
         <div
           onClick={closeModal}

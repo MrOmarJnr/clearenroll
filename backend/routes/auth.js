@@ -8,7 +8,7 @@ module.exports = (pool, uploadUser) => {
   const router = express.Router();
 
   // ======================
-  // Helpers
+  // JWT SIGN
   // ======================
   function signToken(payload) {
     return jwt.sign(payload, process.env.JWT_SECRET, {
@@ -16,23 +16,24 @@ module.exports = (pool, uploadUser) => {
     });
   }
 
+  // ======================
+  // VALIDATION
+  // ======================
   const loginSchema = z.object({
     email: z.string().email(),
     password: z.string().min(1),
   });
 
   // ======================
-  // Get Schools (for Register dropdown)
+  // GET SCHOOLS
   // ======================
   router.get("/schools", async (req, res) => {
     try {
-      const [rows] = await pool.query(
-        `
+      const [rows] = await pool.query(`
         SELECT id, name
         FROM schools
         ORDER BY name ASC
-        `
-      );
+      `);
 
       res.json({ schools: rows || [] });
     } catch (err) {
@@ -42,7 +43,7 @@ module.exports = (pool, uploadUser) => {
   });
 
   // ======================
-  // Login
+  // LOGIN
   // ======================
   router.post("/login", async (req, res) => {
     const parsed = loginSchema.safeParse(req.body);
@@ -81,25 +82,30 @@ module.exports = (pool, uploadUser) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // ✅ NEW: block inactive users
     if (!user.is_active) {
       return res.status(403).json({
         message: "Account not activated. Please check your email.",
       });
     }
 
+    // ===== LOGIN LOG =====
+    await pool.query(
+      `
+      INSERT INTO user_login_logs (user_id, action, ip_address, user_agent)
+      VALUES (?, 'LOGIN', ?, ?)
+      `,
+      [user.id, req.ip, req.headers["user-agent"] || null]
+    );
 
-      await pool.query(
-          `
-          INSERT INTO user_login_logs (user_id, action, ip_address, user_agent)
-          VALUES (?, 'LOGIN', ?, ?)
-          `,
-          [
-            user.id,
-            req.ip,
-            req.headers["user-agent"] || null,
-          ]
-        );
+    // ✅ UPDATE LAST LOGIN
+    await pool.query(
+      `
+      UPDATE users
+      SET last_login_at = NOW()
+      WHERE id = ?
+      `,
+      [user.id]
+    );
 
     const token = signToken({
       userId: user.id,
@@ -114,20 +120,21 @@ module.exports = (pool, uploadUser) => {
   });
 
   // ======================
-  // Register
+  // REGISTER
   // ======================
   router.post(
     "/register",
     uploadUser.single("profile_photo"),
     async (req, res) => {
       try {
-        const { email, password, confirmPassword, school_id } = req.body;
+        const { email, password, confirmPassword, fullname, school_id } =
+          req.body;
 
         const profilePhoto = req.file
           ? `uploads/users/${req.file.filename}`
           : null;
 
-        if (!email || !password || !confirmPassword || !school_id) {
+        if (!email || !password || !confirmPassword || !fullname || !school_id) {
           return res.status(400).json({ message: "All fields are required" });
         }
 
@@ -144,7 +151,6 @@ module.exports = (pool, uploadUser) => {
           return res.status(409).json({ message: "User already exists" });
         }
 
-        // Validate school exists
         const [schoolRows] = await pool.query(
           "SELECT id FROM schools WHERE id = ? LIMIT 1",
           [school_id]
@@ -164,14 +170,13 @@ module.exports = (pool, uploadUser) => {
           return res.status(500).json({ message: "Role not configured" });
         }
 
-        // ✅ NEW: activation token
         const activationToken = crypto.randomBytes(32).toString("hex");
 
-        const [result] = await pool.query(
+        await pool.query(
           `
           INSERT INTO users 
-            (email, password_hash, role_id, school_id, profile_photo, is_active, activation_token)
-          VALUES (?, ?, ?, ?, ?, 0, ?)
+            (email, password_hash, role_id, school_id, profile_photo, is_active, activation_token, full_name)
+          VALUES (?, ?, ?, ?, ?, 0, ?, ?)
           `,
           [
             email,
@@ -180,10 +185,10 @@ module.exports = (pool, uploadUser) => {
             school_id,
             profilePhoto,
             activationToken,
+            fullname,
           ]
         );
 
-        // ✅ TEMP: log activation link (replace with email service later)
         const activationLink = `${process.env.CLIENT_ORIGIN}/activate-account?token=${activationToken}`;
         console.log("ACTIVATION LINK:", activationLink);
 
@@ -199,7 +204,7 @@ module.exports = (pool, uploadUser) => {
   );
 
   // ======================
-  // Activate Account
+  // ACTIVATE ACCOUNT
   // ======================
   router.get("/activate", async (req, res) => {
     const { token } = req.query;
@@ -241,32 +246,38 @@ module.exports = (pool, uploadUser) => {
     }
   });
 
-
+  // ======================
+  // LOGOUT
+  // ======================
   router.post("/logout", async (req, res) => {
-  try {
-    const { userId } = req.body;
+    try {
+      const { userId } = req.body;
+      if (!userId) return res.sendStatus(200);
 
-    if (!userId) return res.sendStatus(200);
+      await pool.query(
+        `
+        INSERT INTO user_login_logs (user_id, action, ip_address, user_agent)
+        VALUES (?, 'LOGOUT', ?, ?)
+        `,
+        [userId, req.ip, req.headers["user-agent"] || null]
+      );
 
-    await pool.query(
-      `
-      INSERT INTO user_login_logs (user_id, action, ip_address, user_agent)
-      VALUES (?, 'LOGOUT', ?, ?)
-      `,
-      [
-        userId,
-        req.ip,
-        req.headers["user-agent"] || null,
-      ]
-    );
+      // ✅ UPDATE LAST LOGOUT
+      await pool.query(
+        `
+        UPDATE users
+        SET last_logout_at = NOW()
+        WHERE id = ?
+        `,
+        [userId]
+      );
 
-    res.sendStatus(200);
-  } catch (err) {
-    console.error("LOGOUT LOG ERROR:", err);
-    res.sendStatus(200);
-  }
-});
-
+      res.sendStatus(200);
+    } catch (err) {
+      console.error("LOGOUT ERROR:", err);
+      res.sendStatus(200);
+    }
+  });
 
   return router;
 };

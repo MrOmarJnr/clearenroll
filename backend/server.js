@@ -17,7 +17,7 @@ app.use(
   express.static(path.join(__dirname, "uploads/students"))
 );
 
-// static serve user uploads
+// static serve user  and registration uploads
 app.use(
   "/uploads/users",
   express.static(path.join(__dirname, "uploads/users"))
@@ -25,9 +25,6 @@ app.use(
 
 const authMiddleware = require("./middleware/auth");
 
-// ======================
-// Ensure upload folder exists
-// ======================
 const uploadDir = path.join(__dirname, "uploads", "students");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -39,10 +36,8 @@ if (!fs.existsSync(userUploadDir)) {
 }
 
 
+// config for student profile photos
 
-// ======================
-// Multer config (store file with original extension)
-// ======================
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, uploadDir);
@@ -54,9 +49,9 @@ const storage = multer.diskStorage({
 });
 
 
-// ======================
-// Multer config for USER profile photos
-// ======================
+
+//  config for USER profile photos
+
 const userStorage = multer.diskStorage({
   destination: function (req, file, cb) {
     cb(null, userUploadDir);
@@ -79,9 +74,9 @@ app.use(
   })
 );
 
-// ======================
+
 // MySQL connection pool
-// ======================
+
 const pool = mysql.createPool({
   host: process.env.DB_SOCKET,
   port: Number(process.env.DB_PORT),
@@ -92,16 +87,14 @@ const pool = mysql.createPool({
   connectionLimit: 10,
 });
 
-// ======================
-// Health
-// ======================
+
 app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
 
-// ======================
-// Mount grouped routes
-// ======================
+
+// routes
+
 app.use("/auth", require("./routes/auth")(pool, uploadUser));
 app.use("/users", require("./routes/users")(pool, authMiddleware));
 app.use("/audit", require("./routes/audit")(pool, authMiddleware));
@@ -114,9 +107,7 @@ app.use("/verify", require("./routes/verify")(pool, authMiddleware));
 app.use("/import", require("./routes/imports")(pool, authMiddleware, upload));
 app.use("/dashboard/analytics", require("./routes/dashboard.analytics")(pool, authMiddleware));
 
-// ======================
-// Existing modules (keep as-is)
-// ======================
+
 const duplicateReviewsRoutes = require("./routes/duplicateReviews");
 app.use("/duplicates", duplicateReviewsRoutes(pool, authMiddleware));
 
@@ -133,9 +124,9 @@ app.use("/dashboard/analytics", require("./routes/dashboard.analytics")(pool, au
 
 
 
-// ======================
+
 // Start server
-// ======================
+
 app.listen(process.env.PORT, () => {
   console.log(`API running on http://localhost:${process.env.PORT}`);
 });

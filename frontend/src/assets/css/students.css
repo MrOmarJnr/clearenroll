@@ -160,8 +160,8 @@
   display: flex;
   align-items: center;
   gap: 10px;
-  justify-content: flex-end;
-  flex-wrap: wrap;
+  justify-content:space-evenly;
+
 }
 
 /* Buttons */
@@ -185,6 +185,14 @@
   background: transparent;
   color: #2563eb;
   border-color: rgba(37, 99, 235, 0.55);
+  width: 100px;
+}
+
+.btn-outlines {
+  background: transparent;
+  color: #2563eb;
+  border-color: rgba(37, 99, 235, 0.55);
+  width: 100px;
 }
 
 .btn-outline:hover {
@@ -195,6 +203,14 @@
   background: #dc2626;
   color: #fff;
   border-color: rgba(220, 38, 38, 0.6);
+  width: 100px;
+}
+
+.btn-dangers {
+  background: #dc2626;
+  color: #fff;
+  border-color: rgba(220, 38, 38, 0.6);
+   width: 100px;
 }
 
 .btn-danger:hover {

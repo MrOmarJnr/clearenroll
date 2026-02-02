@@ -3,11 +3,8 @@ const express = require("express");
 module.exports = (pool, authMiddleware) => {
   const router = express.Router();
 
-  /**
-   * ======================================================
-   * GET ALL FLAGS (SYSTEM VIEW)
-   * ======================================================
-   */
+   // GET ALL FLAGS (SYSTEM VIEW)
+  
   router.get("/", authMiddleware, async (req, res) => {
     try {
       const [rows] = await pool.query(`
@@ -44,12 +41,9 @@ module.exports = (pool, authMiddleware) => {
     }
   });
 
-  /**
-   * ======================================================
-   * FLAG AUDIT LOGS (READ ONLY)
-   * ⚠️ MUST COME BEFORE /:id
-   * ======================================================
-   */
+
+   // FLAG AUDIT LOGS (READ ONLY)
+
   router.get("/audit", authMiddleware, async (req, res) => {
     try {
       const [rows] = await pool.query(`
@@ -79,11 +73,9 @@ module.exports = (pool, authMiddleware) => {
     }
   });
 
-  /**
-   * ======================================================
-   * CREATE FLAG
-   * ======================================================
-   */
+
+   // CREATE FLAG
+ 
   router.post("/", authMiddleware, async (req, res) => {
     const {
       student_id,
@@ -173,15 +165,13 @@ module.exports = (pool, authMiddleware) => {
     }
   });
 
-  /**
-   * ======================================================
-   * GET SINGLE FLAG (VIEW MODAL)
-   * ======================================================
-   */
+
+   // GET SINGLE FLAG (VIEW MODAL)
+ 
   router.get("/:id", authMiddleware, async (req, res) => {
     const flagId = Number(req.params.id);
 
-    // 🔒 HARD GUARD — FIXES NaN BUG
+   
     if (!Number.isInteger(flagId)) {
       return res.status(400).json({ message: "Invalid flag ID" });
     }
@@ -229,11 +219,9 @@ module.exports = (pool, authMiddleware) => {
     }
   });
 
-  /**
-   * ======================================================
-   * CLEAR FLAG
-   * ======================================================
-   */
+ 
+   //CLEAR FLAG
+ 
   router.patch("/:id/clear", authMiddleware, async (req, res) => {
     const flagId = Number(req.params.id);
     const { userId, role } = req.user;

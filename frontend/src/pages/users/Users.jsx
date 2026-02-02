@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../services/api";
+import "../../assets/css/useractions.css";
 
 export default function Users() {
   const [users, setUsers] = useState([]);
@@ -60,12 +61,37 @@ export default function Users() {
                   {u.is_active ? "Activated" : "Pending"}
                 </span>
               </td>
-              <td>{u.last_login_at || "-"}</td>
               <td>
-                <button onClick={() => toggle(u.id)}>Toggle</button>{" "}
-                <button onClick={() => resend(u.id)}>Resend</button>{" "}
-                <button onClick={() => reset(u.id)}>Reset</button>
+              {u.last_login_at
+                ? new Date(u.last_login_at).toLocaleString()
+                : "Never"}
+            </td>
+              <td>
+                <div className="users-actions">
+                  <button
+                    className="users-btn users-btn-toggle"
+                    onClick={() => toggle(u.id)}
+                  >
+                    Toggle
+                  </button>
+
+                  <button
+                    className="users-btn users-btn-resend"
+                    onClick={() => resend(u.id)}
+                  >
+                    Resend
+                  </button>
+
+                  <button
+                    className="users-btn users-btn-reset"
+                    onClick={() => reset(u.id)}
+                  >
+                    Reset
+                  </button>
+                </div>
               </td>
+
+
             </tr>
           ))}
         </tbody>

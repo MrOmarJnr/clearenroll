@@ -1,14 +1,20 @@
 import { useEffect, useState } from "react";
-import "../../assets/css/create-records.css"; // ⬅️ your pasted CSS file
+import { useNavigate } from "react-router-dom";
+import "../../assets/css/create-records.css"; 
 
 export default function Register() {
-  // ===== STATE (UNCHANGED) =====
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [schoolId, setSchoolId] = useState("");
   const [schools, setSchools] = useState([]);
+    const [fullname, setFullname] = useState("");
   const [error, setError] = useState("");
+
+  const navigate = useNavigate();
+
+
 
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
@@ -60,6 +66,7 @@ export default function Register() {
       formData.append("password", password);
       formData.append("confirmPassword", confirmPassword);
       formData.append("school_id", schoolId);
+      formData.append("fullname", fullname);
 
       if (profilePhoto) {
         formData.append("profile_photo", profilePhoto);
@@ -128,7 +135,7 @@ export default function Register() {
                 </option>
               ))}
             </select>
-
+            
             <input
               className="input"
               type="password"
@@ -137,6 +144,8 @@ export default function Register() {
               onChange={(e) => setPassword(e.target.value)}
               required
             />
+
+           
 
             <input
               className="input"
@@ -147,12 +156,24 @@ export default function Register() {
               required
             />
 
-            <input
+             <input
               className="input"
-              type="file"
+              type="text"
+              placeholder="Full Name"
+              value={fullname}
+              onChange={(e) => setFullname(e.target.value)}
+              required
+            />
+
+    
+             <div className="form-field">
+            <label className="label">Photo</label>
+            <input
+             type="file"
               accept="image/*"
               onChange={handlePhotoChange}
             />
+          </div>
 
             {photoPreview && (
               <div>

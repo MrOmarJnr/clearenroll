@@ -7,9 +7,9 @@ export default function Schools() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ======================
+
   // Load schools
-  // ======================
+
   const load = async () => {
     try {
       const data = await api("/schools");
@@ -23,9 +23,9 @@ export default function Schools() {
     load();
   }, []);
 
-  // ======================
+
   // Add school
-  // ======================
+
   const addSchool = async (e) => {
     e.preventDefault();
     if (!name.trim()) return;
@@ -49,9 +49,7 @@ export default function Schools() {
 
   return (
     <>
-      {/* ======================
-          PAGE HEADER
-         ====================== */}
+      {/*PAGE HEADER */}
       <div className="card">
         <div className="page-head">
           <div>
@@ -63,22 +61,20 @@ export default function Schools() {
         </div>
       </div>
 
-      {/* ======================
-          ADD SCHOOL
-         ====================== */}
+      {/* ADD SCHOOL */}
       <div className="card">
         <h3 className="card-title">Add New School</h3>
 
         <form onSubmit={addSchool} className="row-actions">
           <input
             className="input"
-            placeholder="Enter school name"
+            placeholder="Enter school name here"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            style={{ maxWidth: 420 }}
+          
           />
 
-          <button className="btn btn-primary" type="submit" disabled={loading}>
+          <button className="btn btn-primary" type="submit" disabled={loading}  style={{ maxWidth: "10%" }}>
             {loading ? "Adding..." : "Add School"}
           </button>
         </form>
@@ -86,9 +82,7 @@ export default function Schools() {
         {error && <div className="danger" style={{ marginTop: 10 }}>{error}</div>}
       </div>
 
-      {/* ======================
-          SCHOOLS TABLE
-         ====================== */}
+      {/*SCHOOLS TABLE*/}
       <div className="card">
         <h3 className="card-title">Registered Schools</h3>
 

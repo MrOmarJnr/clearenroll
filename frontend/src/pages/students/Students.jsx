@@ -149,11 +149,11 @@ export default function Students() {
   return (
     <>
       <div className="card">
-        <div className="students-head">
+        <div className="page-head">
           <div>
-            <h1 className="students-title">Flagged Students</h1>
-            <div className="students-subtitle">
-              Only students with active fee flags appear here
+            <h1 className="page-title">My Debtors / My students</h1>
+            <div className="page-subtitle">
+              View student records with outstanding fees or flags within your school
             </div>
           </div>
         </div>
@@ -179,7 +179,7 @@ export default function Students() {
                 <th>School</th>
                 <th>Guardian</th>
                 <th>Status</th>
-                <th style={{ textAlign: "right" }}>Actions</th>
+                <th style={{ textAlign: "center" }}>Actions</th>
               </tr>
             </thead>
 
@@ -188,7 +188,7 @@ export default function Students() {
                 const isSuperAdmin = user?.role === "SUPER_ADMIN";
                 const isSchoolAdmin = user?.role === "SCHOOL_ADMIN";
 
-                // Permission rule (unchanged)
+            
                 const canClear =
                   isSuperAdmin ||
                   (isSchoolAdmin &&
@@ -210,7 +210,7 @@ export default function Students() {
                     <td>
                       <div className="students-actions">
                         <button
-                          className="btn btn-outline"
+                          className="btn btn-outlines"
                           type="button"
                           onClick={() => openViewModal(s)}
                         >
@@ -223,7 +223,7 @@ export default function Students() {
 
                         {canClear && (
                           <button
-                            className="btn btn-danger"
+                            className="btn btn-dangers"
                             onClick={() => clearFlagForStudent(s.active_flag_id)}
                           >
                             Clear

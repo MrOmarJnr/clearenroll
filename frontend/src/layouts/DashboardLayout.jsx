@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
-
-
-// ✅ Use your AdminHub CSS (paste your provided CSS into this file or create style.css)
 import "../assets/css/new_style.css";
 
 export default function DashboardLayout() {
@@ -16,11 +13,9 @@ export default function DashboardLayout() {
   const [sidebarHidden, setSidebarHidden] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
-    // optional: persist (won’t break anything if not present)
     return localStorage.getItem("ce_dark_mode") === "1";
   });
 
-  // ====== AUTH + RBAC (KEEP YOUR EXISTING LOGIC) ======
   const token = localStorage.getItem("token");
 
   const getUserSafe = () => {
@@ -42,16 +37,16 @@ export default function DashboardLayout() {
 
   
 
-  const user = getUserSafe();
-  const role = user?.role;
-const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+    const user = getUserSafe();
+    const role = user?.role;
+    const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
-const profileImage =
-  user?.profile_photo
-    ? user.profile_photo.startsWith("http")
-      ? user.profile_photo
-      : `${API_BASE}/${user.profile_photo}`
-    : null;
+    const profileImage =
+      user?.profile_photo
+        ? user.profile_photo.startsWith("http")
+          ? user.profile_photo
+          : `${API_BASE}/${user.profile_photo}`
+        : null;
   
 
   const ROLE_ALLOW = useMemo(
@@ -68,7 +63,6 @@ const profileImage =
         "/flags/create",
         "/schools",
         "/duplicates",
-        "/consents",
         "/students/import",
         "/parents/import",
         "/allrecords",
@@ -111,9 +105,6 @@ const profileImage =
         "/parents/add",
       ],
 
-      TEST_RECEIVING_SCHOOL: ["/dashboard", "/verify", "/verify/enrollment", "/students"],
-
-      BURSAR: ["/dashboard", "/verify", "/flags", "/flags/create", "/students", "/students/add"],
     }),
     []
   );
@@ -130,7 +121,7 @@ const profileImage =
     });
   };
 
-  // keep your redirect behavior
+
   useEffect(() => {
     if (role && location?.pathname && !isAllowed(location.pathname)) {
       if (location.pathname !== "/dashboard") {
@@ -138,27 +129,27 @@ const profileImage =
       }
     }
   }, [role, location?.pathname]);
-const logout = async () => {
-  try {
-    const token = localStorage.getItem("token");
-    if (token) {
-      const payload = jwtDecode(token);
-      await fetch(`${API_BASE}/auth/logout`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: payload.userId }),
-      });
-    }
-  } catch (err) {
-    console.warn("Logout log failed:", err);
-  }
+    const logout = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (token) {
+          const payload = jwtDecode(token);
+          await fetch(`${API_BASE}/auth/logout`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: payload.userId }),
+          });
+        }
+      } catch (err) {
+        console.warn("Logout log failed:", err);
+      }
 
-  localStorage.removeItem("token");
-  navigate("/login", { replace: true });
-};
+      localStorage.removeItem("token");
+      navigate("/login", { replace: true });
+    };
 
 
-  // ====== AdminHub responsive defaults (from script.js) ======
+
   useEffect(() => {
     const applyResponsiveDefaults = () => {
       if (window.innerWidth < 768) {
@@ -181,23 +172,13 @@ const logout = async () => {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  // ====== Dark mode (AdminHub) ======
-  useEffect(() => {
-    if (darkMode) {
-      document.body.classList.add("dark");
-      localStorage.setItem("ce_dark_mode", "1");
-    } else {
-      document.body.classList.remove("dark");
-      localStorage.setItem("ce_dark_mode", "0");
-    }
-  }, [darkMode]);
+
 
   const profileInitial =
     user?.full_name?.trim()?.[0]?.toUpperCase() ||
     user?.email?.trim()?.[0]?.toUpperCase() ||
     "U";
 
-  // helper to style active li like AdminHub
   const sideLinkClass = ({ isActive }) => (isActive ? "active" : "");
 
 
@@ -342,19 +323,10 @@ const logout = async () => {
 
         </ul>
 
-        <ul className="side-menu">
-          <li>
-            <a href="#" onClick={(e) => { e.preventDefault(); logout(); }} className="logout">
-              <i className="bx bxs-log-out-circle" />
-              <span className="text">Logout</span>
-            </a>
-          </li>
-        </ul>
       </section>
 
       {/* CONTENT */}
       <section id="content">
-        {/* NAVBAR */}
     <nav>
   {/* LEFT */}
   

@@ -18,15 +18,16 @@ export default function Dashboard() {
   const [recentPage, setRecentPage] = useState(1);
   const [myPage, setMyPage] = useState(1);
 
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+
+
   useEffect(() => {
     (async () => {
-      // ===== Existing dashboard (DO NOT TOUCH LOGIC) =====
       const data = await api("/dashboard");
       setCards(data.cards);
       setRecentFlags(data.recentFlags || []);
       setMyFlagActivity(data.myFlagActivity || []);
 
-      // ===== Analytics (add-on only) =====
       try {
         const a = await api("/dashboard/analytics");
         setAnalytics(a);
@@ -67,13 +68,11 @@ export default function Dashboard() {
   };
 
   const statusClass = (status) => {
-    // Map your statuses into AdminHub badge styles
     if (status === "CLEARED") return "status completed";
     if (status === "FLAGGED") return "status pending";
     return "status process";
   };
 
-  // get the user from token (keep your logic)
   const token = localStorage.getItem("token");
 
   const getUserSafe = () => {
@@ -95,6 +94,21 @@ export default function Dashboard() {
 
   const user = getUserSafe();
 
+   const profileImage =
+      user?.profile_photo
+        ? user.profile_photo.startsWith("http")
+          ? user.profile_photo
+          : `${API_BASE}/${user.profile_photo}`
+        : null;
+
+        
+  const profileInitial =
+    user?.full_name?.trim()?.[0]?.toUpperCase() ||
+    user?.email?.trim()?.[0]?.toUpperCase() ||
+    "U";
+
+
+
   if (!cards) return <div>Loading...</div>;
 
   return (
@@ -102,13 +116,17 @@ export default function Dashboard() {
       {/* HEADER (AdminHub) */}
       <div className="head-title">
         <div className="left">
+          
           <h1>Dashboard</h1>
           {user ? (
             <div style={{ marginTop: 10, color: "var(--dark)" }}>
-              Hello <strong>{user.full_name}</strong>,
-              <br /> welcome to your dashboard
+           
+              Hello <strong style={{ fontSize: "30px" }}>{user.full_name}  </strong>
+              <br />
             </div>
+            
           ) : null}
+          
         </div>
 
      

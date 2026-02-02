@@ -3,9 +3,9 @@ const express = require("express");
 module.exports = (pool, authMiddleware) => {
   const router = express.Router();
 
-  // ======================
+
   // Verify (Registry Lookup – Student-first)
-  // ======================
+
   router.post("/", authMiddleware, async (req, res) => {
     let { query } = req.body;
 
@@ -19,23 +19,22 @@ module.exports = (pool, authMiddleware) => {
       query = query.toUpperCase();
     }
 
-    // ======================
-    // ✅ ADDITION: Detect DOB in DD-MM-YYYY format
-    // ======================
+  
+
+
     let dob = null;
     const dobRegex = /^(\d{2})-(\d{2})-(\d{4})$/;
     const dobMatch = query.match(dobRegex);
 
     if (dobMatch) {
       const [, dd, mm, yyyy] = dobMatch;
-      // Convert to MySQL format
       dob = `${yyyy}-${mm}-${dd}`;
     }
 
     try {
-      // ======================
-      // 1) STUDENTS (PRIMARY)
-      // ======================
+
+      //  STUDENTS (PRIMARY)
+
       const [students] = await pool.query(
         `
         SELECT DISTINCT
@@ -61,7 +60,7 @@ module.exports = (pool, authMiddleware) => {
           OR p.full_name LIKE ?
           OR p.phone = ?
           OR p.ghana_card_number = ?
-          OR s.date_of_birth = ?   -- ✅ ADDITION (DOB support)
+          OR s.date_of_birth = ? 
 
         ORDER BY s.id DESC
         `,
@@ -70,7 +69,7 @@ module.exports = (pool, authMiddleware) => {
           `%${query}%`,
           query,
           query,
-          dob, // ✅ ADDITION (null unless query is a DOB)
+          dob, 
         ]
       );
 
@@ -85,9 +84,9 @@ module.exports = (pool, authMiddleware) => {
 
       const studentIds = students.map((s) => s.id);
 
-      // ======================
-      // 2) FLAGS (AUTHORITATIVE)
-      // ======================
+     
+      //  FLAGS (AUTHORITATIVE)
+ 
       const [flags] = await pool.query(
         `
         SELECT
@@ -119,9 +118,9 @@ module.exports = (pool, authMiddleware) => {
         [studentIds]
       );
 
-      // ======================
-      // 3) PARENTS (UNIQUE CONTEXT)
-      // ======================
+  
+      // 3) PARENTS
+
       const parentsMap = new Map();
 
       students.forEach((s) => {
@@ -148,10 +147,10 @@ module.exports = (pool, authMiddleware) => {
 
       const parents = Array.from(parentsMap.values());
 
-      // ======================
-      // 4) STATUS (STUDENT-FIRST)
+   
+      // STATUS (STUDENT-FIRST)
       // FLAGGED if any matched student is flagged
-      // ======================
+
       const status = flags.length > 0 ? "FLAGGED" : "CLEAR";
 
       return res.json({
