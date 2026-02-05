@@ -242,3 +242,16 @@
 .badge-success{
 	 background: #2ecc71;
 }
+
+
+.search-import{
+  display:flex;
+  max-width: 80%;
+  gap: 10px;
+}
+
+.search-import .importbutton {
+  max-width: 200px;
+  max-height: fit-content;
+  background-color: green;
+}

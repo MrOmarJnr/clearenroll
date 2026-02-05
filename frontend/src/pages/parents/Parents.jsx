@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import { api } from "../../services/api";
 import "../../assets/css/students.css";
 
@@ -51,14 +51,23 @@ export default function Parents() {
         </div>
 
       {error && <div className="danger">{error}</div>}
-
-      {/* ===== Search ===== */}
+      <div className="search-import">
+         {/* ===== Search ===== */}
       <input
         className="input students-search"
         placeholder="Search by name, phone, or Ghana Card…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}
       />
+         <button
+          className="importbutton"
+          onClick={() => navigate("/parents/import")}
+        >
+          Bulk Import Parents
+        </button>
+
+      </div>
+     
 
       {/* ===== Table ===== */}
       <div className="students-table-wrap">
