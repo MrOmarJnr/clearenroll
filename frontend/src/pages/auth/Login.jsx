@@ -12,7 +12,7 @@ export default function Login() {
   const navigate = useNavigate();
   const existingToken = localStorage.getItem("token");
 
-  // ✅ NEW: read query params (for activation success)
+  // (for activation success)
   const [searchParams] = useSearchParams();
   const activated = searchParams.get("activated");
 
@@ -69,7 +69,7 @@ export default function Login() {
 
         <form className="login100-form" onSubmit={handleLogin}>
 
-          {/* ✅ ACTIVATION SUCCESS MESSAGE */}
+          {/*  ACTIVATION SUCCESS MESSAGE */}
           {activated && (
             <div
               style={{
@@ -82,7 +82,7 @@ export default function Login() {
                 fontSize: 14,
               }}
             >
-              ✅ Account activated successfully. You may now sign in.
+               Account activated successfully. You may now sign in.
             </div>
           )}
 
@@ -144,8 +144,7 @@ export default function Login() {
 
         {/* FOOTER */}
         <div className="auth-footer-disclaimer">
-          By signing in to this software you are agreeing to the use and consent of the contents on the software.
-          Any misuse of the information provided on this software is liable to legal actions.
+          By enrolling on this platform, you agree to the intended use of its contents. Any misuse of the information is liable to legal action.
         </div>
 
         <div className="auth-footer">

@@ -24,8 +24,7 @@ export default function ProtectedRoute({ children, roles }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Optional role guard if you ever want:
-  // <ProtectedRoute roles={["SUPER_ADMIN"]}>...</ProtectedRoute>
+
   if (Array.isArray(roles) && roles.length > 0) {
     const userRole = payload?.role;
     if (!roles.includes(userRole)) {
