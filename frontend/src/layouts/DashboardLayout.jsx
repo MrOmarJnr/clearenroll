@@ -42,17 +42,21 @@ export default function DashboardLayout() {
   const [needsConsent, setNeedsConsent] = useState(false);
 
   // ===== CONSENT CHECK (FIXED, NO EARLY RETURN) =====
-useEffect(() => {
+ useEffect(() => {
+  // DO NOT check consent if not logged in
   if (!token) {
-    navigate("/login");
+    setLoading(false);
     return;
   }
 
   const checkConsent = async () => {
     try {
       const res = await api("/user/consent-status");
-      if (!res.has_consented) setNeedsConsent(true);
-    } catch {
+
+      if (!res.has_consented) {
+        setNeedsConsent(true);
+      }
+    } catch (err) {
       localStorage.removeItem("token");
       navigate("/login");
     } finally {
