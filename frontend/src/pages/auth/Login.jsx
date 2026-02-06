@@ -135,9 +135,11 @@ export default function Login() {
             Sign in to your account
           </button>
 
-          <div className="auth-links">
+      {/*    <div className="auth-links">
             <a href="/register">Register Now</a>
           </div>
+          */}
+
         </form>
 
         {/* FOOTER */}
