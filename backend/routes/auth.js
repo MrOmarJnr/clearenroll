@@ -97,7 +97,7 @@ module.exports = (pool, uploadUser) => {
       [user.id, req.ip, req.headers["user-agent"] || null]
     );
 
-    // ✅ UPDATE LAST LOGIN
+    //  UPDATE LAST LOGIN
     await pool.query(
       `
       UPDATE users
@@ -262,7 +262,7 @@ module.exports = (pool, uploadUser) => {
         [userId, req.ip, req.headers["user-agent"] || null]
       );
 
-      // ✅ UPDATE LAST LOGOUT
+      //  UPDATE LAST LOGOUT
       await pool.query(
         `
         UPDATE users

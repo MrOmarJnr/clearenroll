@@ -106,6 +106,9 @@ app.use("/flags", require("./routes/flags")(pool, authMiddleware));
 app.use("/verify", require("./routes/verify")(pool, authMiddleware));
 app.use("/import", require("./routes/imports")(pool, authMiddleware, upload));
 app.use("/dashboard/analytics", require("./routes/dashboard.analytics")(pool, authMiddleware));
+app.use("/user", require("./routes/userConsent")(pool, authMiddleware));
+
+
 
 
 const duplicateReviewsRoutes = require("./routes/duplicateReviews");
