@@ -72,6 +72,7 @@ export default function ConsentModal({ open, onAccept, onDecline }) {
         </div>
 
         <div className="consent-actions">
+          {/*
           <button
             type="button"
             className="btn-decline"
@@ -79,6 +80,7 @@ export default function ConsentModal({ open, onAccept, onDecline }) {
           >
             Reject
           </button>
+          */}
 
           <button
             type="button"

@@ -64,7 +64,7 @@ export default function Login() {
     <div className="auth-container">
       {/* LEFT PANEL */}
       <div className="auth-left">
-        <h2>Clear Enroll School Portal</h2>
+        <h2>ClearEnroll School Portal</h2>
         <p style={{ color: "#f4f4f4" }}>Sign in to your account</p>
 
         <form className="login100-form" onSubmit={handleLogin}>
