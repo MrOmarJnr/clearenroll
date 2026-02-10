@@ -3,9 +3,9 @@ const express = require("express");
 module.exports = (pool, authMiddleware) => {
   const router = express.Router();
 
-  // ======================
+
   // GET CONSENT STATUS
-  // ======================
+
   router.get("/consent-status", authMiddleware, async (req, res) => {
     try {
       const [[user]] = await pool.query(
@@ -27,9 +27,9 @@ module.exports = (pool, authMiddleware) => {
     }
   });
 
-  // ======================
+
   // SAVE CONSENT
-  // ======================
+
   router.post("/consent", authMiddleware, async (req, res) => {
     try {
       await pool.query(
