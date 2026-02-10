@@ -14,6 +14,20 @@ export default function Verify() {
   // Modal selection
   const [selectedStudent, setSelectedStudent] = useState(null);
 
+    const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  const openPreview = (url) => {
+    if (!url) return;
+    setPreviewUrl(url);
+    setPreviewOpen(true);
+  };
+
+  const closePreview = () => {
+    setPreviewOpen(false);
+    setPreviewUrl(null);
+  };
+
 
   // Search
 
@@ -68,42 +82,46 @@ export default function Verify() {
     return `${API_URL}/uploads/students/${photo}`;
   };
 
-  const renderStudentPhoto = (photo, size = 45) => {
-    const url = buildPhotoUrl(photo);
+const renderStudentPhoto = (photo, size = 45) => {
+  const url = buildPhotoUrl(photo);
 
-    if (!url) {
-      return (
-        <div
-          style={{
-            width: size,
-            height: size,
-            borderRadius: "50%",
-            background: "#e5e7eb",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 12,
-          }}
-        >
-          N/A
-        </div>
-      );
-    }
-
+  if (!url) {
     return (
-      <img
-        src={url}
-        alt="Student"
+      <div
         style={{
           width: size,
           height: size,
           borderRadius: "50%",
-          objectFit: "cover",
-          border: "1px solid #ddd",
+          background: "#e5e7eb",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 12,
         }}
-      />
+      >
+        N/A
+      </div>
     );
-  };
+  }
+
+  return (
+    <img
+      src={url}
+      alt="Student"
+      className="thumb-photo"
+      onClick={() => openPreview(url)}
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        objectFit: "cover",
+        border: "1px solid #ddd",
+        cursor: "zoom-in",
+      }}
+    />
+  );
+};
+
 
 
   //  show ONLY selected student's flags
@@ -253,7 +271,7 @@ const formatDob = (dob) => {
                 {result.students && result.students.length ? (
                   result.students.map((s) => (
                     <tr key={s.id}>
-                      <td>{renderStudentPhoto(s.student_photo, 90)}</td>
+                      <td className="photo-zoom" >{renderStudentPhoto(s.student_photo, 90)}</td>
                       <td>{s.name}</td>
                       <td>{s.parent_name || "-"}</td>
                       <td>{s.school}</td>
@@ -271,6 +289,30 @@ const formatDob = (dob) => {
                 )}
               </tbody>
             </table>
+
+                        {previewOpen && (
+              <div className="img-lightbox" onClick={closePreview}>
+                <div
+                  className="img-lightbox-card"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className="img-lightbox-close"
+                    onClick={closePreview}
+                    type="button"
+                  >
+                    ✕
+                  </button>
+
+                  <img
+                    className="img-lightbox-img"
+                    src={previewUrl}
+                    alt="Preview"
+                  />
+                </div>
+              </div>
+)}
+
           </div>
 
           {/* OUTSTANDING */}

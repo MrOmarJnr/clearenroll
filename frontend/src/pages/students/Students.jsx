@@ -16,6 +16,22 @@ export default function Students() {
   const [selectedFlag, setSelectedFlag] = useState(null);
   const [viewLoading, setViewLoading] = useState(false);
 
+
+  
+    const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewUrl, setPreviewUrl] = useState(null);
+
+  const openPreview = (url) => {
+    if (!url) return;
+    setPreviewUrl(url);
+    setPreviewOpen(true);
+  };
+
+  const closePreview = () => {
+    setPreviewOpen(false);
+    setPreviewUrl(null);
+  };
+
   // Safe user extraction
   const token = localStorage.getItem("token");
 
@@ -98,30 +114,36 @@ export default function Students() {
     ).padStart(2, "0")}-${d.getFullYear()}`;
   };
 
-  const renderStudentPhoto = (photo, name) => {
-    if (!photo) {
-      const initials = name
-        ? name
-            .split(" ")
-            .map((n) => n[0])
-            .join("")
-            .slice(0, 2)
-        : "NA";
+const renderStudentPhoto = (photo, name) => {
+  if (!photo) {
+    const initials = name
+      ? name
+          .split(" ")
+          .map((n) => n[0])
+          .join("")
+          .slice(0, 2)
+      : "NA";
 
-      return <div className="student-avatar">{initials}</div>;
-    }
+    return <div className="student-avatar">{initials}</div>;
+  }
 
-    return (
-      <img
-        className="student-photo"
-        src={`${API_URL}/uploads/students/${photo}`}
-        alt={name || "Student"}
-        onError={(e) => {
-          e.currentTarget.style.display = "none";
-        }}
-      />
-    );
-  };
+  const url = `${API_URL}/uploads/students/${photo}`;
+
+  return (
+    <img
+      className="student-photo clickable-photo"
+      src={url}
+      alt={name || "Student"}
+      onClick={() => openPreview(url)}
+      onContextMenu={(e) => e.preventDefault()}
+      style={{ userSelect: "none", WebkitUserDrag: "none" }}
+      onError={(e) => {
+        e.currentTarget.style.display = "none";
+      }}
+    />
+  );
+};
+
 
   const closeModal = () => {
     setSelectedStudent(null);
@@ -196,7 +218,7 @@ export default function Students() {
 
                 return (
                   <tr key={s.id}>
-                    <td>{renderStudentPhoto(s.student_photo, s.name)}</td>
+                    <td className="pictureHover">{renderStudentPhoto(s.student_photo, s.name)}</td>
                     <td>{s.name}</td>
                     <td>{s.id}</td>
                     <td>{formatDateDMY(s.date_of_birth)}</td>
@@ -244,6 +266,30 @@ export default function Students() {
               )}
             </tbody>
           </table>
+
+                      {previewOpen && (
+              <div className="img-lightbox" onClick={closePreview}>
+                <div
+                  className="img-lightbox-card"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <button
+                    className="img-lightbox-close"
+                    onClick={closePreview}
+                    type="button"
+                  >
+                    ✕
+                  </button>
+
+                  <img
+                    className="img-lightbox-img"
+                    src={previewUrl}
+                    alt="Preview"
+                  />
+                </div>
+              </div>
+            )}
+
         </div>
       </div>
 

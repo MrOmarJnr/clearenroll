@@ -308,7 +308,11 @@ module.exports = (pool, authMiddleware, upload) => {
   });
 
   // update
-  router.put("/:id", authMiddleware, async (req, res) => {
+ router.put(
+  "/:id",
+  authMiddleware,
+  upload.single("student_photo"), 
+  async (req, res) => {
     const {
       first_name,
       last_name,
@@ -319,7 +323,9 @@ module.exports = (pool, authMiddleware, upload) => {
       parent_id,
       student_school_id,
       leaving_class,
-    } = req.body;
+    } = req.body || {};
+
+    const studentPhotoFilename = req.file ? req.file.filename : null;
 
     const conn = await pool.getConnection();
     try {
@@ -335,7 +341,8 @@ module.exports = (pool, authMiddleware, upload) => {
           gender=?,
           current_school_id=?,
           student_school_id=?,
-          leaving_class=?
+          leaving_class=?,
+          student_photo = COALESCE(?, student_photo)
         WHERE id=?
         `,
         [
@@ -347,10 +354,12 @@ module.exports = (pool, authMiddleware, upload) => {
           current_school_id,
           student_school_id || null,
           leaving_class || null,
+          studentPhotoFilename, // ✅ only updates if new photo
           req.params.id,
         ]
       );
 
+      // 🔁 KEEP YOUR PARENT LOGIC EXACTLY
       if (parent_id) {
         const [existing] = await conn.query(
           "SELECT id FROM student_parents WHERE student_id = ? LIMIT 1",
@@ -386,7 +395,9 @@ module.exports = (pool, authMiddleware, upload) => {
     } finally {
       conn.release();
     }
-  });
+  }
+);
+
 
   // delete
   router.delete("/:id", authMiddleware, async (req, res) => {

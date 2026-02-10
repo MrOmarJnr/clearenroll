@@ -83,13 +83,13 @@ export default function EditStudent() {
         fd.append("student_photo", form.student_photo);
       }
 
-      // ✅ Update student
+  
       await api(`/students/${id}`, {
         method: "PUT",
         body: fd,
       });
 
-      // ✅ Assign guardian / parent (kept logic)
+ 
       if (form.parent_id) {
         await api(`/students/${id}/assign-parent`, {
           method: "PATCH",
@@ -103,9 +103,9 @@ export default function EditStudent() {
     }
   };
 
-  // ======================
+
   // DELETE
-  // ======================
+
   const remove = async () => {
     if (!confirm("Delete this student permanently?")) return;
     try {
@@ -192,7 +192,7 @@ export default function EditStudent() {
           onChange={onChange("student_school_id")}
         />
 
-        {/* ✅ GUARDIAN / PARENT (KEPT) */}
+    
         <select
           className="select"
           value={form.parent_id}

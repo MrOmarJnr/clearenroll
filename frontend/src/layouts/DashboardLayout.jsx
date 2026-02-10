@@ -11,7 +11,7 @@ export default function DashboardLayout() {
 
   const [profileOpen, setProfileOpen] = useState(false);
 
-  // ====== UI state (AdminHub behaviors) ======
+
   const [sidebarHidden, setSidebarHidden] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(() => {
@@ -37,13 +37,15 @@ export default function DashboardLayout() {
     }
   };
 
-  // ===== CONSENT / LOADING STATE =====
+
   const [loading, setLoading] = useState(true);
   const [needsConsent, setNeedsConsent] = useState(false);
 
-  // ===== CONSENT CHECK (FIXED, NO EARLY RETURN) =====
- useEffect(() => {
-  // DO NOT check consent if not logged in
+  const CONSENT_SESSION_KEY = "ce_consent_this_login";
+
+
+
+useEffect(() => {
   if (!token) {
     setLoading(false);
     return;
@@ -51,9 +53,11 @@ export default function DashboardLayout() {
 
   const checkConsent = async () => {
     try {
-      const res = await api("/user/consent-status");
+      const sessionOk = sessionStorage.getItem(CONSENT_SESSION_KEY);
 
-      if (!res.has_consented) {
+      await api("/user/consent-status");
+
+      if (!sessionOk) {
         setNeedsConsent(true);
       }
     } catch (err) {
@@ -66,6 +70,7 @@ export default function DashboardLayout() {
 
   checkConsent();
 }, [navigate, token]);
+
 
 
   // ===== USER / ROLE =====
@@ -119,7 +124,6 @@ export default function DashboardLayout() {
         "/flags",
         "/flags/create",
         "/duplicates",
-        "/consents",
         "/students/import",
         "/parents/import",
         "/allrecords",
@@ -181,6 +185,7 @@ export default function DashboardLayout() {
     }
 
     localStorage.removeItem("token");
+    sessionStorage.removeItem(CONSENT_SESSION_KEY);
     navigate("/login", { replace: true });
   };
 
@@ -507,10 +512,12 @@ export default function DashboardLayout() {
             <main>
               <ConsentModal
                 open={needsConsent}
-                onAccept={async () => {
-                  await api("/user/consent", { method: "POST" });
-                  setNeedsConsent(false);
-                }}
+              onAccept={async () => {
+                    await api("/user/consent", { method: "POST" });
+                    sessionStorage.setItem(CONSENT_SESSION_KEY, "1");
+                    setNeedsConsent(false);
+                  }}
+
                 onDecline={logout}
               />
 
