@@ -19,10 +19,12 @@ import Dashboard from "./pages/dashboard/Dashboard";
 
 /* ================= allrecords ================= */
 import CreateRecords from "./pages/allinone/allinone";
+import CreateRecordsTeachers from "./pages/allinone/allinoneteacher";
 
 /* ================= VERIFY ================= */
 import Verify from "./pages/verify/Verify";
 import VerifyEnrollment from "./pages/verify/VerifyEnrollment";
+import VerifyTeacher from "./pages/verify/VerifyTeacher";
 
 /* ================= DATA ================= */
 import Parents from "./pages/parents/Parents";
@@ -37,6 +39,7 @@ import EditStudent from "./pages/students/EditStudent";
 
 import Flags from "./pages/flags/Flags";
 import CreateFlag from "./pages/flags/CreateFlag";
+import FlagsTeacher from "./pages/flags/FlagsTeacher";
 
 /* ================= SYSTEM ================= */
 import Consents from "./pages/consents/Consents";
@@ -82,10 +85,12 @@ export default function App() {
 
           {/* records */}
           <Route path="/allrecords" element={<CreateRecords />} />
+          <Route path="/teachersrecords" element={<CreateRecordsTeachers />} />
 
           {/* Verify */}
           <Route path="/verify" element={<Verify />} />
           <Route path="/verify/enrollment" element={<VerifyEnrollment />} />
+          <Route path="/teacherverify" element={<VerifyTeacher />} />
 
           {/* Parents */}
           <Route path="/parents" element={<Parents />} />
@@ -102,6 +107,7 @@ export default function App() {
           {/* Flags */}
           <Route path="/flags" element={<Flags />} />
           <Route path="/flags/create" element={<CreateFlag />} />
+          <Route path="/teachersflag" element={<FlagsTeacher />} />
 
            {/* audit */}
            <Route path="/flags/audit" element={<FlagAudit />} />

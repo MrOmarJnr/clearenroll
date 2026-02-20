@@ -13,15 +13,15 @@ export default function CreateFlag() {
   const [reportedBySchoolId, setReportedBySchoolId] = useState("");
 
   const [amountOwed, setAmountOwed] = useState("");
-  const [currency, setCurrency] = useState("GHS"); // ✅ restored
+  const [currency, setCurrency] = useState("GHS"); 
   const [reason, setReason] = useState("");
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // ===============================
+
   // LOAD STUDENTS + PARENTS
-  // ===============================
+
   useEffect(() => {
     (async () => {
       try {
@@ -36,9 +36,9 @@ export default function CreateFlag() {
     })();
   }, []);
 
-  // ===============================
+
   // STUDENT CHANGE → AUTO SCHOOL + PARENT
-  // ===============================
+
   const onStudentChange = (e) => {
     const id = e.target.value;
     setStudentId(id);
@@ -55,9 +55,8 @@ export default function CreateFlag() {
     setReportedBySchoolId(selected.school_id);
   };
 
-  // ===============================
   // SUBMIT
-  // ===============================
+
   const submit = async (e) => {
     e.preventDefault();
     setError("");
@@ -66,9 +65,9 @@ export default function CreateFlag() {
     const payload = {
       student_id: Number(studentId),
       parent_id: parentId ? Number(parentId) : null,
-      reported_by_school_id: Number(reportedBySchoolId), // ✅ REQUIRED
+      reported_by_school_id: Number(reportedBySchoolId),
       amount_owed: Number(amountOwed),
-      currency, // ✅ WORKS
+      currency, 
       reason,
     };
 

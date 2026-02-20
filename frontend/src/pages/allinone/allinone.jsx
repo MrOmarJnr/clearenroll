@@ -238,7 +238,7 @@ export default function CreateRecords() {
         <div>
              <div className="page-head">
           <div>
-            <h1 className="page-title">Create a Record</h1>
+            <h1 className="page-title">Create a Student Record</h1>
             <div className="page-subtitle">
              Create a record with three simple steps
             </div>

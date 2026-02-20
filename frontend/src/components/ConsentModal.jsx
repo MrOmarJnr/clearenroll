@@ -1,4 +1,3 @@
-// components/ConsentModal.jsx
 import "../assets/css/consent-modal.css";
 
 export default function ConsentModal({ open, onAccept, onDecline }) {

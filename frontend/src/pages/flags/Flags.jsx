@@ -128,9 +128,8 @@ export default function Flags() {
     );
   };
 
-  // ===============================
   // RENDER
-  // ===============================
+ 
   return (
     <div className="card">
       {/* PAGE HEADER */}

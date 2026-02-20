@@ -111,6 +111,9 @@ useEffect(() => {
         "/register",
         "/users",
         "/audit/login-logs",
+        "/teachersrecords",
+        "/teachersflag",
+        "/teacherverify"
       ],
 
       SCHOOL_ADMIN: [
@@ -130,6 +133,9 @@ useEffect(() => {
         "/parents/:id/edit",
         "/students/:id/edit",
         "/dashboard/analytics",
+        "/teachersrecords",
+        "/teachersflag",
+        "/teacherverify"
       ],
 
       ADMISSIONS: [
@@ -299,7 +305,20 @@ useEffect(() => {
                 >
                   <NavLink to="/verify">
                     <i className="bx bxs-check-shield" />
-                    <span className="text">Verify</span>
+                    <span className="text">Verify Student</span>
+                  </NavLink>
+                </li>
+              )}
+              
+              {isAllowed("/teacherverify") && (
+                <li
+                  className={sideLinkClass({
+                    isActive: location.pathname.startsWith("/teacherverify"),
+                  })}
+                >
+                  <NavLink to="/teacherverify">
+                    <i className="bx bxs-check-shield" />
+                    <span className="text">Verify Teacher</span>
                   </NavLink>
                 </li>
               )}
@@ -338,7 +357,20 @@ useEffect(() => {
                 >
                   <NavLink to="/flags">
                     <i className="bx bxs-flag-alt" />
-                    <span className="text">Flags</span>
+                    <span className="text"> Student Flags</span>
+                  </NavLink>
+                </li>
+              )}
+
+                 {isAllowed("/teachersflag") && (
+                <li
+                  className={sideLinkClass({
+                    isActive: location.pathname.startsWith("/teachersflag"),
+                  })}
+                >
+                  <NavLink to="/teachersflag">
+                    <i className="bx bxs-flag-alt" />
+                    <span className="text"> Teacher Flags</span>
                   </NavLink>
                 </li>
               )}
@@ -390,7 +422,20 @@ useEffect(() => {
                 >
                   <NavLink to="/allrecords">
                     <i className="bx bxs-plus-circle" />
-                    <span className="text">Create Record</span>
+                    <span className="text">Create Student Record</span>
+                  </NavLink>
+                </li>
+              )}
+
+                 {isAllowed("/teachersrecords") && (
+                <li
+                  className={sideLinkClass({
+                    isActive: location.pathname.startsWith("/teachersrecords"),
+                  })}
+                >
+                  <NavLink to="/teachersrecords">
+                    <i className="bx bxs-plus-circle" />
+                    <span className="text">Create Teacher Record</span>
                   </NavLink>
                 </li>
               )}

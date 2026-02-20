@@ -23,6 +23,12 @@ app.use(
   express.static(path.join(__dirname, "uploads/users"))
 );
 
+app.use(
+  "/uploads/teachers",
+  express.static(path.join(__dirname, "uploads/teachers"))
+);
+
+
 const authMiddleware = require("./middleware/auth");
 
 const uploadDir = path.join(__dirname, "uploads", "students");
@@ -35,6 +41,11 @@ if (!fs.existsSync(userUploadDir)) {
   fs.mkdirSync(userUploadDir, { recursive: true });
 }
 
+
+const teacherUploadDir = path.join(__dirname, "uploads", "teachers");
+if (!fs.existsSync(teacherUploadDir)) {
+  fs.mkdirSync(teacherUploadDir, { recursive: true });
+}
 
 // config for student profile photos
 
@@ -66,6 +77,21 @@ const uploadUser = multer({ storage: userStorage })
 
 
 const upload = multer({ storage });
+
+// config for teacher profile photos
+
+const teacherStorage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, teacherUploadDir);
+  },
+  filename: function (req, file, cb) {
+    const ext = path.extname(file.originalname || "");
+    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+  },
+});
+
+const uploadTeacher = multer({ storage: teacherStorage });
+
 
 app.use(
   cors({
@@ -101,12 +127,14 @@ app.use("/audit", require("./routes/audit")(pool, authMiddleware));
 app.use("/schools", require("./routes/schools")(pool, authMiddleware));
 app.use("/parents", require("./routes/parents")(pool, authMiddleware));
 app.use("/students", require("./routes/students")(pool, authMiddleware, upload));
+app.use("/teachers", require("./routes/teachers")(pool, authMiddleware, uploadTeacher));
 app.use("/dashboard", require("./routes/dashboard")(pool, authMiddleware));
 app.use("/flags", require("./routes/flags")(pool, authMiddleware));
 app.use("/verify", require("./routes/verify")(pool, authMiddleware));
 app.use("/import", require("./routes/imports")(pool, authMiddleware, upload));
 app.use("/dashboard/analytics", require("./routes/dashboard.analytics")(pool, authMiddleware));
 app.use("/user", require("./routes/userConsent")(pool, authMiddleware));
+app.use("/verifyteacher", require("./routes/verifyTeacher")(pool, authMiddleware));
 
 
 
