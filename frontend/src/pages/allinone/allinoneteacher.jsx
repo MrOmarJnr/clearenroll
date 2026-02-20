@@ -107,7 +107,7 @@ export default function CreateTeacher() {
     qualification: "",
     employment_year: "",
     reason: "",
-    status: "ACTIVE",
+    status: "FLAGGED",
     ghana_card_number: "",
     address: "",
     phone: "",

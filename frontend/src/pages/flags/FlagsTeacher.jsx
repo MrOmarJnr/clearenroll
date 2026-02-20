@@ -167,8 +167,8 @@ export default function FlagsTeacher() {
                 <td>{t.phone || "-"}</td>
 
                 <td>
-                  {t.status === "ACTIVE" ? (
-                    <span className="badge badge-success">ACTIVE</span>
+                  {t.status === "FLAGGED" ? (
+                    <span className="badge badge-danger">ACTIVE</span>
                   ) : (
                     <span className="badge badge-danger">
                       {t.status || "INACTIVE"}

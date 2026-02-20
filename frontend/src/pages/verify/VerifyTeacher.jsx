@@ -180,7 +180,7 @@ export default function VerifyTeacher() {
                 className={
                   result.status === "FLAGGED"
                     ? "badge badge-danger"
-                    : "badge badge-success"
+                    : "badge badge-danger"
                 }
                 style={{ fontSize: 22, padding: "20px 14px" }}
               >
