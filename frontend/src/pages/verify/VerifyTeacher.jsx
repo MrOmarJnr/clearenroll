@@ -112,24 +112,45 @@ export default function VerifyTeacher() {
     );
   };
 
-  // ===============================
-  // SELECTED TEACHER FLAGS
-  // ===============================
-  const getSelectedTeacherFlags = () => {
-    if (!result || !selectedTeacher) return [];
+  const downloadEvidence = async (teacherId, evidenceId, fileName) => {
+  try {
+    const token = localStorage.getItem("token");
 
-    return (result.flags || []).filter(
-      (f) => Number(f.teacher_id) === Number(selectedTeacher.id)
+    const response = await fetch(
+      `${API_URL}/teachers/${teacherId}/evidence/${evidenceId}/download`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
     );
-  };
 
-  const selectedFlags = getSelectedTeacherFlags();
+    if (!response.ok) {
+      throw new Error("Download failed");
+    }
+
+    const blob = await response.blob();
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+  } catch (err) {
+    alert("Download failed");
+  }
+};
 
   const closeModal = () => setSelectedTeacher(null);
 
   return (
     <>
       <div className="verify-page">
+
         {/* SEARCH */}
         <div className="card">
           <div className="page-head">
@@ -174,19 +195,20 @@ export default function VerifyTeacher() {
         {result && (
           <>
             {/* STATUS */}
-            <div className="card">
-              <h3 style={{ marginBottom: 10 }}>Registry Status</h3>
-              <span
-                className={
-                  result.status === "FLAGGED"
-                    ? "badge badge-danger"
-                    : "badge badge-danger"
-                }
-                style={{ fontSize: 22, padding: "20px 14px" }}
-              >
-                {result.status}
-              </span>
-            </div>
+            {/* SUMMARY */}
+              <div className="card">
+                  <h3>Search Summary</h3>
+
+                  <div style={{ display: "flex", gap: 20, marginTop: 10 }}>
+                    <div className="badge badge-success">
+                      ENGAGED: {result.summary?.engaged || 0}
+                    </div>
+
+                    <div className="badge badge-danger">
+                      FLAGGED: {result.summary?.flagged || 0}
+                    </div>
+                  </div>
+                </div>
 
             {/* TEACHERS TABLE */}
             <div className="card">
@@ -197,30 +219,48 @@ export default function VerifyTeacher() {
                     <th>Photo</th>
                     <th>Name</th>
                     <th>School</th>
+                     <th>Status</th>  
                     <th>Address</th>
                     <th></th>
                   </tr>
                 </thead>
-                <tbody>
-                  {result.teachers?.map((t) => (
-                    <tr key={t.id}>
-                      <td>{renderTeacherPhoto(t.teacher_photo)}</td>
-                      <td>
-                        {t.first_name} {t.last_name}
-                      </td>
-                      <td>{t.school}</td>
-                      <td>{t.address || "-"}</td>
-                      <td style={{ textAlign: "right" }}>
-                        <button
-                          className="btn"
-                          onClick={() => setSelectedTeacher(t)}
-                        >
-                          View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                                  <tbody>
+                    {result.teachers?.map((t) => (
+                      <tr key={t.id}>
+                        <td>{renderTeacherPhoto(t.teacher_photo)}</td>
+
+                        <td>
+                          {t.first_name} {t.last_name}
+                        </td>
+
+                        <td>{t.school}</td>
+
+                        {/* STATUS COLUMN */}
+                        <td>
+                          {t.status === "FLAGGED" ? (
+                            <span className="badge badge-danger">
+                              FLAGGED
+                            </span>
+                          ) : (
+                            <span className="badge badge-success">
+                              ENGAGED
+                            </span>
+                          )}
+                        </td>
+
+                        <td>{t.address || "-"}</td>
+
+                        <td style={{ textAlign: "right" }}>
+                          <button
+                            className="btn"
+                            onClick={() => setSelectedTeacher(t)}
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
               </table>
             </div>
           </>
@@ -298,20 +338,48 @@ export default function VerifyTeacher() {
               </table>
             </div>
 
-           <div className="card">
+      <div className="card">
   <h3>Outstanding Issue</h3>
 
-  {selectedTeacher.reason ? (
-    <table className="table">
-      <tbody>
-        <tr>
-          <td style={{ width: 200 }}>
-            <strong>Reason</strong>
-          </td>
-          <td>{selectedTeacher.reason}</td>
-        </tr>
-      </tbody>
-    </table>
+  {selectedTeacher.status === "FLAGGED" ? (
+    <>
+      <table className="table">
+        <tbody>
+          <tr>
+            <td style={{ width: 200 }}>
+              <strong>Reason</strong>
+            </td>
+            <td>{selectedTeacher.reason || "-"}</td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* EVIDENCE */}
+      <div style={{ marginTop: 15 }}>
+        <h4>Evidence Files</h4>
+
+        {selectedTeacher.evidence?.length > 0 ? (
+          selectedTeacher.evidence.map((ev) => (
+            <div key={ev.id} style={{ marginBottom: 8 }}>
+          <button
+  onClick={() =>
+    downloadEvidence(
+      selectedTeacher.id,
+      ev.id,
+      ev.file_name
+    )
+  }
+  className="btn btn-outline"
+>
+  Download
+</button>
+                        </div>
+          ))
+        ) : (
+          <div>No evidence uploaded.</div>
+        )}
+      </div>
+    </>
   ) : (
     <div>No outstanding issue for this teacher.</div>
   )}

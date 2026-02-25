@@ -180,7 +180,7 @@ export default function Dashboard() {
     </div>
     <div className="text">
       <h3>{cards.pendingDuplicates ?? 0}</h3>
-      <p>Pending Duplicates</p>
+      <p>Teachers</p>
     </div>
   </li>
 </ul>

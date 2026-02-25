@@ -21,7 +21,7 @@ module.exports = (pool, authMiddleware) => {
         "SELECT COUNT(*) AS total FROM flags WHERE status = 'FLAGGED'"
       );
       const [[pendingDuplicates]] = await pool.query(
-        "SELECT COUNT(*) AS total FROM duplicate_reviews WHERE decision IS NULL"
+        "SELECT COUNT(*) AS total FROM school_teachers"
       );
 
 

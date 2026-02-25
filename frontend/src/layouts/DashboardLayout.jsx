@@ -10,6 +10,8 @@ export default function DashboardLayout() {
   const location = useLocation();
 
   const [profileOpen, setProfileOpen] = useState(false);
+  const [studentsOpen, setStudentsOpen] = useState(false);
+const [teachersOpen, setTeachersOpen] = useState(false);
 
 
   const [sidebarHidden, setSidebarHidden] = useState(false);
@@ -113,7 +115,9 @@ useEffect(() => {
         "/audit/login-logs",
         "/teachersrecords",
         "/teachersflag",
-        "/teacherverify"
+        "/teacherverify",
+        "/teachers/import",
+        "/teachers/:id/edit"
       ],
 
       SCHOOL_ADMIN: [
@@ -135,18 +139,10 @@ useEffect(() => {
         "/dashboard/analytics",
         "/teachersrecords",
         "/teachersflag",
-        "/teacherverify"
-      ],
-
-      ADMISSIONS: [
-        "/dashboard",
-        "/verify",
-        "/verify/enrollment",
-        "/students",
-        "/students/add",
-        "/parents",
-        "/parents/add",
-      ],
+        "/teacherverify",
+        "/teachers/import",
+         "/teachers/:id/edit"
+      ]
     }),
     []
   );
@@ -264,6 +260,29 @@ useEffect(() => {
   };
 }, [navigate]);
 
+useEffect(() => {
+  const p = location.pathname || "";
+
+  if (
+    p.startsWith("/verify") ||
+    p.startsWith("/students") ||
+    p.startsWith("/parents") ||
+    p.startsWith("/flags") ||
+    p.startsWith("/allrecords")
+  ) {
+    setStudentsOpen(true);
+  }
+
+  if (
+   p.startsWith("/teacherverify") ||
+  p.startsWith("/teachersflag") ||
+  p.startsWith("/teachersrecords") ||
+  p.startsWith("/teachers/import") ||
+  p.startsWith("/teachers/") && p.endsWith("/edit")
+  ) {
+    setTeachersOpen(true);
+  }
+}, [location.pathname]);
   
 
 
@@ -285,230 +304,292 @@ useEffect(() => {
               <span className="text">ClearEnroll</span>
             </a>
 
-            <ul className="side-menu top">
-              <li
-                className={sideLinkClass({
-                  isActive: location.pathname === "/dashboard",
-                })}
-              >
-                <NavLink to="/dashboard" end>
-                  <i className="bx bxs-dashboard" />
-                  <span className="text">Dashboard</span>
-                </NavLink>
-              </li>
+          <ul className="side-menu top">
+  {/* DASHBOARD (UNCHANGED) */}
+  <li
+    className={sideLinkClass({
+      isActive: location.pathname === "/dashboard",
+    })}
+  >
+    <NavLink to="/dashboard" end>
+      <i className="bx bxs-dashboard" />
+      <span className="text">Dashboard</span>
+    </NavLink>
+  </li>
 
-              {isAllowed("/verify") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/verify"),
-                  })}
-                >
-                  <NavLink to="/verify">
-                    <i className="bx bxs-check-shield" />
-                    <span className="text">Verify Student</span>
-                  </NavLink>
-                </li>
-              )}
-              
-              {isAllowed("/teacherverify") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/teacherverify"),
-                  })}
-                >
-                  <NavLink to="/teacherverify">
-                    <i className="bx bxs-check-shield" />
-                    <span className="text">Verify Teacher</span>
-                  </NavLink>
-                </li>
-              )}
+  {/* ===================== STUDENTS HEADER (NEW) ===================== */}
+  <li>
+    <a
+      href="#"
+      onClick={(e) => {
+        e.preventDefault();
+        setStudentsOpen((v) => !v);
+      }}
+      style={{ display: "flex", alignItems: "center", gap: 10 }}
+    >
+      <i className="bx bxs-group" />
+      <span className="text">Students</span>
 
-              {isAllowed("/students") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/students"),
-                  })}
-                >
-                  <NavLink to="/students">
-                    <i className="bx bxs-group" />
-                    <span className="text">My Debtors</span>
-                  </NavLink>
-                </li>
-              )}
+      {/* arrow to the far right (won't break your css) */}
+      <i
+        className={`bx ${studentsOpen ? "bx-chevron-down" : "bx-chevron-right"}`}
+        style={{ marginLeft: "auto" }}
+      />
+    </a>
+  </li>
 
-              {isAllowed("/parents") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/parents"),
-                  })}
-                >
-                  <NavLink to="/parents">
-                    <i className="bx bxs-user-detail" />
-                    <span className="text">Parents</span>
-                  </NavLink>
-                </li>
-              )}
+  {/* ===================== STUDENTS ITEMS (UNCHANGED, just wrapped) ===================== */}
+  {studentsOpen && (
+    <>
+      {isAllowed("/verify") && (
+        <li
+          className={sideLinkClass({
+            isActive: location.pathname.startsWith("/verify"),
+          })}
+        >
+          <NavLink to="/verify">
+            <i className="bx bxs-check-shield" />
+            <span className="text">Verify Student</span>
+          </NavLink>
+        </li>
+      )}
 
-              {isAllowed("/flags") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/flags"),
-                  })}
-                >
-                  <NavLink to="/flags">
-                    <i className="bx bxs-flag-alt" />
-                    <span className="text"> Student Flags</span>
-                  </NavLink>
-                </li>
-              )}
+      {isAllowed("/students") && (
+        <li
+          className={sideLinkClass({
+            isActive: location.pathname.startsWith("/students"),
+          })}
+        >
+          <NavLink to="/students">
+            <i className="bx bxs-group" />
+            <span className="text">My Debtors</span>
+          </NavLink>
+        </li>
+      )}
 
-                 {isAllowed("/teachersflag") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/teachersflag"),
-                  })}
-                >
-                  <NavLink to="/teachersflag">
-                    <i className="bx bxs-flag-alt" />
-                    <span className="text"> Teacher Flags</span>
-                  </NavLink>
-                </li>
-              )}
+      {isAllowed("/parents") && (
+        <li
+          className={sideLinkClass({
+            isActive: location.pathname.startsWith("/parents"),
+          })}
+        >
+          <NavLink to="/parents">
+            <i className="bx bxs-user-detail" />
+            <span className="text">Parents</span>
+          </NavLink>
+        </li>
+      )}
 
-              {isAllowed("/duplicates") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/duplicates"),
-                  })}
-                >
-                  <NavLink to="/duplicates">
-                    <i className="bx bxs-copy" />
-                    <span className="text">Duplicates</span>
-                  </NavLink>
-                </li>
-              )}
+      {isAllowed("/flags") && (
+        <li
+          className={sideLinkClass({
+            isActive: location.pathname.startsWith("/flags"),
+          })}
+        >
+          <NavLink to="/flags">
+            <i className="bx bxs-flag-alt" />
+            <span className="text"> Student Flags</span>
+          </NavLink>
+        </li>
+      )}
 
-              {isAllowed("/schools") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/schools"),
-                  })}
-                >
-                  <NavLink to="/schools">
-                    <i className="bx bxs-school" />
-                    <span className="text">Schools</span>
-                  </NavLink>
-                </li>
-              )}
+      {isAllowed("/allrecords") && (
+        <li
+          className={sideLinkClass({
+            isActive: location.pathname.startsWith("/allrecords"),
+          })}
+        >
+          <NavLink to="/allrecords">
+            <i className="bx bxs-plus-circle" />
+            <span className="text">Create Student Record</span>
+          </NavLink>
+        </li>
+      )}
 
-              {isAllowed("/consents") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/consents"),
-                  })}
-                >
-                  <NavLink to="/consents">
-                    <i className="bx bxs-lock-alt" />
-                    <span className="text">Consents</span>
-                  </NavLink>
-                </li>
-              )}
+      {isAllowed("/flags/audit") && (
+        <li
+          className={sideLinkClass({
+            isActive: location.pathname.startsWith("/flags/audit"),
+          })}
+        >
+          <NavLink to="/flags/audit">
+            <i className="bx bxs-book" />
+            <span className="text">Audit Logs</span>
+          </NavLink>
+        </li>
+      )}
+    </>
+  )}
 
-              {isAllowed("/allrecords") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/allrecords"),
-                  })}
-                >
-                  <NavLink to="/allrecords">
-                    <i className="bx bxs-plus-circle" />
-                    <span className="text">Create Student Record</span>
-                  </NavLink>
-                </li>
-              )}
+  {/* ===================== TEACHERS HEADER (NEW) ===================== */}
+  <li>
+    <a
+      href="#"
+      onClick={(e) => {
+        e.preventDefault();
+        setTeachersOpen((v) => !v);
+      }}
+      style={{ display: "flex", alignItems: "center", gap: 10 }}
+    >
+      <i className="bx bxs-user-badge" />
+      <span className="text">Teachers</span>
 
-                 {isAllowed("/teachersrecords") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/teachersrecords"),
-                  })}
-                >
-                  <NavLink to="/teachersrecords">
-                    <i className="bx bxs-plus-circle" />
-                    <span className="text">Create Teacher Record</span>
-                  </NavLink>
-                </li>
-              )}
+      <i
+        className={`bx ${teachersOpen ? "bx-chevron-down" : "bx-chevron-right"}`}
+        style={{ marginLeft: "auto" }}
+      />
+    </a>
+  </li>
 
-              {isAllowed("/flags/audit") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/flags/audit"),
-                  })}
-                >
-                  <NavLink to="/flags/audit">
-                    <i className="bx bxs-book" />
-                    <span className="text">Audit Logs</span>
-                  </NavLink>
-                </li>
-              )}
+  {/* ===================== TEACHERS ITEMS (UNCHANGED, just wrapped) ===================== */}
+  {teachersOpen && (
+    <>
+      {isAllowed("/teacherverify") && (
+        <li
+          className={sideLinkClass({
+            isActive: location.pathname.startsWith("/teacherverify"),
+          })}
+        >
+          <NavLink to="/teacherverify">
+            <i className="bx bxs-check-shield" />
+            <span className="text">Verify Teacher</span>
+          </NavLink>
+        </li>
+      )}
 
-              {isAllowed("/dashboard/analytics") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith(
-                      "/dashboard/analytics"
-                    ),
-                  })}
-                >
-                  <NavLink to="/dashboard/analytics">
-                    <i className="bx bxs-doughnut-chart" />
-                    <span className="text">Analytics</span>
-                  </NavLink>
-                </li>
-              )}
+      {isAllowed("/teachersflag") && (
+        <li
+          className={sideLinkClass({
+            isActive: location.pathname.startsWith("/teachersflag"),
+          })}
+        >
+          <NavLink to="/teachersflag">
+            <i className="bx bxs-flag-alt" />
+            <span className="text"> Teacher Flags</span>
+          </NavLink>
+        </li>
+      )}
 
-              {isAllowed("/register") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/register"),
-                  })}
-                >
-                  <NavLink to="/register">
-                    <i className="bx bxs-user-plus" />
-                    <span className="text">Register School</span>
-                  </NavLink>
-                </li>
-              )}
+      {isAllowed("/teachersrecords") && (
+        <li
+          className={sideLinkClass({
+            isActive: location.pathname.startsWith("/teachersrecords"),
+          })}
+        >
+          <NavLink to="/teachersrecords">
+            <i className="bx bxs-plus-circle" />
+            <span className="text">Create Teacher Record</span>
+          </NavLink>
+        </li>
+      )}
+          {isAllowed("/teachers/import") && (
+        <li
+          className={sideLinkClass({
+            isActive: location.pathname.startsWith("/teachers/import"),
+          })}
+        >
+          <NavLink to="/teachers/import">
+            <i className="bx bxs-plus-circle" />
+            <span className="text">Import Teachers</span>
+          </NavLink>
+        </li>
+      )}
+    </>
+  )}
 
-              {isAllowed("/users") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith("/users"),
-                  })}
-                >
-                  <NavLink to="/users">
-                    <i className="bx bxs-user-plus" />
-                    <span className="text">Users</span>
-                  </NavLink>
-                </li>
-              )}
+  {/* ===================== REMAINING MENU (100% UNCHANGED) ===================== */}
 
-              {isAllowed("/audit/login-logs") && (
-                <li
-                  className={sideLinkClass({
-                    isActive: location.pathname.startsWith(
-                      "/audit/login-logs"
-                    ),
-                  })}
-                >
-                  <NavLink to="/audit/login-logs">
-                    <i className="bx bxs-user-plus" />
-                    <span className="text">Login Logs</span>
-                  </NavLink>
-                </li>
-              )}
-            </ul>
+  {isAllowed("/duplicates") && (
+    <li
+      className={sideLinkClass({
+        isActive: location.pathname.startsWith("/duplicates"),
+      })}
+    >
+      <NavLink to="/duplicates">
+        <i className="bx bxs-copy" />
+        <span className="text">Duplicates</span>
+      </NavLink>
+    </li>
+  )}
+
+  {isAllowed("/schools") && (
+    <li
+      className={sideLinkClass({
+        isActive: location.pathname.startsWith("/schools"),
+      })}
+    >
+      <NavLink to="/schools">
+        <i className="bx bxs-school" />
+        <span className="text">Schools</span>
+      </NavLink>
+    </li>
+  )}
+
+  {isAllowed("/consents") && (
+    <li
+      className={sideLinkClass({
+        isActive: location.pathname.startsWith("/consents"),
+      })}
+    >
+      <NavLink to="/consents">
+        <i className="bx bxs-lock-alt" />
+        <span className="text">Consents</span>
+      </NavLink>
+    </li>
+  )}
+
+  {isAllowed("/dashboard/analytics") && (
+    <li
+      className={sideLinkClass({
+        isActive: location.pathname.startsWith("/dashboard/analytics"),
+      })}
+    >
+      <NavLink to="/dashboard/analytics">
+        <i className="bx bxs-doughnut-chart" />
+        <span className="text">Analytics</span>
+      </NavLink>
+    </li>
+  )}
+
+  {isAllowed("/register") && (
+    <li
+      className={sideLinkClass({
+        isActive: location.pathname.startsWith("/register"),
+      })}
+    >
+      <NavLink to="/register">
+        <i className="bx bxs-user-plus" />
+        <span className="text">Register School</span>
+      </NavLink>
+    </li>
+  )}
+
+  {isAllowed("/users") && (
+    <li
+      className={sideLinkClass({
+        isActive: location.pathname.startsWith("/users"),
+      })}
+    >
+      <NavLink to="/users">
+        <i className="bx bxs-user-plus" />
+        <span className="text">Users</span>
+      </NavLink>
+    </li>
+  )}
+
+  {isAllowed("/audit/login-logs") && (
+    <li
+      className={sideLinkClass({
+        isActive: location.pathname.startsWith("/audit/login-logs"),
+      })}
+    >
+      <NavLink to="/audit/login-logs">
+        <i className="bx bxs-user-plus" />
+        <span className="text">Login Logs</span>
+      </NavLink>
+    </li>
+  )}
+</ul>
           </section>
 
           {/* CONTENT */}

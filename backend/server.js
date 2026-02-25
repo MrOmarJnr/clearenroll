@@ -138,7 +138,6 @@ app.use("/verifyteacher", require("./routes/verifyTeacher")(pool, authMiddleware
 
 
 
-
 const duplicateReviewsRoutes = require("./routes/duplicateReviews");
 app.use("/duplicates", duplicateReviewsRoutes(pool, authMiddleware));
 
@@ -150,6 +149,9 @@ app.use("/disputes", disputesRoutes(pool, authMiddleware));
 
 const flagAuditRoutes = require("./routes/flagAudit");
 app.use("/flags", flagAuditRoutes(pool, authMiddleware));
+
+const importTeachers = require("./routes/importTeachers");
+app.use("/import/teachers",importTeachers(pool, authMiddleware, upload));
 
 app.use("/dashboard/analytics", require("./routes/dashboard.analytics")(pool, authMiddleware));
 

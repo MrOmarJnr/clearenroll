@@ -31,6 +31,7 @@ import Parents from "./pages/parents/Parents";
 import AddParent from "./pages/parents/AddParent";
 import ParentsImport from "./pages/parents/ParentsImport";
 import EditParent from "./pages/parents/EditParent";
+import TeachersImport from "./pages/teachers/TeachersImport";
 
 import Students from "./pages/students/Students";
 import AddStudent from "./pages/students/AddStudent";
@@ -40,6 +41,8 @@ import EditStudent from "./pages/students/EditStudent";
 import Flags from "./pages/flags/Flags";
 import CreateFlag from "./pages/flags/CreateFlag";
 import FlagsTeacher from "./pages/flags/FlagsTeacher";
+
+import EditTeacher from "./pages/teachers/EditTeacher";
 
 /* ================= SYSTEM ================= */
 import Consents from "./pages/consents/Consents";
@@ -103,12 +106,20 @@ export default function App() {
           <Route path="/students/add" element={<AddStudent />} />
            <Route path="/students/import" element={<StudentsImport />} />
            <Route path="/students/:id/edit" element={<EditStudent />} />
+          
+
 
           {/* Flags */}
           <Route path="/flags" element={<Flags />} />
           <Route path="/flags/create" element={<CreateFlag />} />
           <Route path="/teachersflag" element={<FlagsTeacher />} />
 
+
+ 
+          {/* Teachers */}
+          <Route path="/teachers/import" element={<TeachersImport />} />
+          <Route path="/teachers/:id/edit" element={<EditTeacher />} />
+          
            {/* audit */}
            <Route path="/flags/audit" element={<FlagAudit />} />
 

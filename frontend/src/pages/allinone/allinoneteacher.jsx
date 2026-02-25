@@ -97,6 +97,16 @@ export default function CreateTeacher() {
   const [error, setError] = useState("");
   const [schools, setSchools] = useState([]);
 
+  const REASON_OPTIONS = [
+    "Bad attitude",
+    "Absenteeism",
+    "Misconduct",
+    "Insubordination",
+    "Poor performance",
+    "Fraud / theft",
+    "Other",
+  ];
+
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
@@ -107,11 +117,13 @@ export default function CreateTeacher() {
     qualification: "",
     employment_year: "",
     reason: "",
-    status: "FLAGGED",
+    reason_option: "",
+    status: "ENGAGED",
     ghana_card_number: "",
     address: "",
     phone: "",
     teacher_photo: null,
+    evidence_files: [],
   });
 
   /* ===============================
@@ -127,7 +139,6 @@ export default function CreateTeacher() {
     setSchools(sch.schools || []);
   };
 
-  /* Auto-assign school if not super admin */
   useEffect(() => {
     if (!isSuperAdmin && userSchoolId) {
       setForm((prev) => ({
@@ -138,6 +149,31 @@ export default function CreateTeacher() {
   }, [isSuperAdmin, userSchoolId]);
 
   /* ===============================
+     HELPERS
+  =================================*/
+
+  const isFlagged = form.status === "FLAGGED";
+  const isOtherReason =
+    String(form.reason_option || "").toLowerCase() === "other";
+
+  const onPickEvidenceFiles = (filesList) => {
+    const incoming = Array.from(filesList || []);
+    setForm((prev) => {
+      const current = prev.evidence_files || [];
+      const combined = [...current, ...incoming].slice(0, 10);
+      return { ...prev, evidence_files: combined };
+    });
+  };
+
+  const removeEvidenceAt = (index) => {
+    setForm((prev) => {
+      const next = [...(prev.evidence_files || [])];
+      next.splice(index, 1);
+      return { ...prev, evidence_files: next };
+    });
+  };
+
+  /* ===============================
      SUBMIT
   =================================*/
 
@@ -145,14 +181,26 @@ export default function CreateTeacher() {
     e.preventDefault();
     setError("");
 
+    if (isFlagged && isOtherReason && !form.reason.trim()) {
+      setError("Reason is required.");
+      return;
+    }
+
     try {
       const fd = new FormData();
 
       Object.entries(form).forEach(([key, value]) => {
+        if (key === "evidence_files") return;
         if (value !== null && value !== undefined && value !== "") {
           fd.append(key, value);
         }
       });
+
+      if (isFlagged) {
+        form.evidence_files.forEach((file) => {
+          fd.append("evidence_files[]", file);
+        });
+      }
 
       await api("/teachers", {
         method: "POST",
@@ -257,13 +305,18 @@ export default function CreateTeacher() {
             }
           />
 
-          <input
-            className="input"
-            placeholder="Status (e.g ACTIVE)"
+          {/* STATUS */}
+          <select
+            className="select"
+            value={form.status}
             onChange={(e) =>
               setForm({ ...form, status: e.target.value })
             }
-          />
+          >
+            <option value="ENGAGED">ENGAGED</option>
+            <option value="FLAGGED">FLAGGED</option>
+    
+          </select>
 
           <input
             className="input"
@@ -289,13 +342,70 @@ export default function CreateTeacher() {
             }
           />
 
-          <textarea
-            className="input"
-            placeholder="Reason"
-            onChange={(e) =>
-              setForm({ ...form, reason: e.target.value })
-            }
-          />
+          {/* ==========================
+             FLAGGED SECTION ONLY
+          ========================== */}
+          {isFlagged && (
+            <>
+              <select
+                className="select"
+                value={form.reason_option}
+                onChange={(e) =>
+                  setForm({ ...form, reason_option: e.target.value })
+                }
+              >
+                <option value="">Select a reason...</option>
+                {REASON_OPTIONS.map((r) => (
+                  <option key={r} value={r}>
+                    {r}
+                  </option>
+                ))}
+              </select>
+
+              <textarea
+                className="input"
+                placeholder="Reason"
+                value={form.reason}
+                required
+                onChange={(e) =>
+                  setForm({ ...form, reason: e.target.value })
+                }
+              />
+
+              <div className="form-field">
+                <label className="label">
+                  Evidence (up to 10 files)
+                </label>
+
+                <input
+                  type="file"
+                  multiple
+                  className="input"
+                  onChange={(e) => {
+                    onPickEvidenceFiles(e.target.files);
+                    e.target.value = "";
+                  }}
+                />
+
+                {form.evidence_files.length > 0 && (
+                  <div style={{ marginTop: 10 }}>
+                    {form.evidence_files.map((f, idx) => (
+                      <div key={idx} style={{ marginBottom: 6 }}>
+                        {f.name}
+                        <button
+                          type="button"
+                          className="btn btn-ghost"
+                          onClick={() => removeEvidenceAt(idx)}
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
 
           <div className="form-field">
             <label className="label">Photo</label>
@@ -313,7 +423,9 @@ export default function CreateTeacher() {
         </div>
 
         <div className="form-footer">
-          <button className="btn btn-primary">Save Teacher</button>
+          <button className="btn btn-primary">
+            Save Teacher
+          </button>
         </div>
       </form>
     </div>
