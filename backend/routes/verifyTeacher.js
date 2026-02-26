@@ -18,7 +18,7 @@ router.post("/", authMiddleware, async (req, res) => {
 
   try {
     // =============================
-    // 1️⃣ FETCH TEACHERS
+    //  FETCH TEACHERS
     // =============================
     const [teachers] = await pool.query(
       `
@@ -57,7 +57,7 @@ router.post("/", authMiddleware, async (req, res) => {
     }
 
     // =============================
-    // 2️⃣ FETCH EVIDENCE
+    // FETCH EVIDENCE
     // =============================
     const teacherIds = teachers.map(t => t.id);
 
@@ -71,7 +71,7 @@ router.post("/", authMiddleware, async (req, res) => {
     );
 
     // =============================
-    // 3️⃣ GROUP EVIDENCE PER TEACHER
+    //  GROUP EVIDENCE PER TEACHER
     // =============================
     const evidenceMap = {};
 
@@ -88,7 +88,7 @@ router.post("/", authMiddleware, async (req, res) => {
     });
 
     // =============================
-    // 4️⃣ SUMMARY LOGIC
+    //  SUMMARY LOGIC
     // =============================
     const flaggedCount = teachers.filter(t => t.status === "FLAGGED").length;
     const engagedCount = teachers.filter(t => t.status === "ENGAGED").length;

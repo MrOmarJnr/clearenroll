@@ -14,18 +14,18 @@ app.use(express.json());
 // static serve student uploads
 app.use(
   "/uploads/students",
-  express.static(path.join(__dirname, "uploads/students"))
+  express.static(path.join(__dirname, "/var/www/clearenroll-uploads/students"))
 );
 
 // static serve user  and registration uploads
 app.use(
   "/uploads/users",
-  express.static(path.join(__dirname, "uploads/users"))
+  express.static(path.join(__dirname, "/var/www/clearenroll-uploads/users"))
 );
 
 app.use(
   "/uploads/teachers",
-  express.static(path.join(__dirname, "uploads/teachers"))
+  express.static(path.join(__dirname, "/var/www/clearenroll-uploads/teachers"))
 );
 
 
