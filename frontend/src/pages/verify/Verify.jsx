@@ -52,7 +52,7 @@ export default function Verify() {
       });
 
       if (data.status === "NOT_FOUND") {
-        setError("No record found for the provided identifier.");
+        setError("No record found.");
         return;
       }
 

@@ -10,7 +10,7 @@ export default function DashboardLayout() {
   const location = useLocation();
 
   const [profileOpen, setProfileOpen] = useState(false);
-  const [studentsOpen, setStudentsOpen] = useState(false);
+  const [studentsOpen, setStudentsOpen] = useState(true);
 const [teachersOpen, setTeachersOpen] = useState(false);
 
 
@@ -546,7 +546,7 @@ useEffect(() => {
     >
       <NavLink to="/dashboard/analytics">
         <i className="bx bxs-doughnut-chart" />
-        <span className="text">Analytics</span>
+        <span className="text">Students Analytics</span>
       </NavLink>
     </li>
   )}
