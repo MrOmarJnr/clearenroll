@@ -51,7 +51,7 @@ services:
       - clearenroll_net
 
   watchtower:
-    image: containrrr/watchtower
+    image: containrrr/watchtower:lastest
     container_name: clearenroll_watchtower
     restart: unless-stopped
     volumes:
