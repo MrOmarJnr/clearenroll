@@ -1,6 +1,9 @@
-backend/.env
-.env
+
 backend/uploads/
 
-
+node_modules
 .env
+.env.*
+backend/.env
+backend/.env.*
+.DS_Store
