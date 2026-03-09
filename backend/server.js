@@ -14,18 +14,18 @@ app.use(express.json());
 // static serve student uploads
 app.use(
   "/uploads/students",
-  express.static(path.join(__dirname, "/var/www/clearenroll-uploads/students"))
+  express.static(path.join(__dirname, "uploads/students"))
 );
 
 // static serve user  and registration uploads
 app.use(
   "/uploads/users",
-  express.static(path.join(__dirname, "/var/www/clearenroll-uploads/users"))
+  express.static(path.join(__dirname, "uploads/users"))
 );
 
 app.use(
   "/uploads/teachers",
-  express.static(path.join(__dirname, "/var/www/clearenroll-uploads/teachers"))
+  express.static(path.join(__dirname, "uploads/teachers"))
 );
 
 
@@ -102,17 +102,15 @@ app.use(
 
 
 // MySQL connection pool
-
 const pool = mysql.createPool({
-  host: process.env.DB_SOCKET,
-  port: Number(process.env.DB_PORT),
+  host: process.env.DB_HOST,  
+  port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   waitForConnections: true,
   connectionLimit: 10,
 });
-
 
 app.get("/health", (req, res) => {
   res.json({ ok: true });

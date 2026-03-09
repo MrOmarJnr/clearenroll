@@ -1,0 +1,57 @@
+services:
+
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - clearenroll_net
+
+  backend:
+    image: kwakujnr/clearenroll-backend:latest
+    restart: unless-stopped
+    env_file:
+      - ./backend/.env.prod
+    depends_on:
+      - mysql
+    volumes:
+      - backend_uploads:/app/uploads
+    networks:
+      - clearenroll_net
+
+  frontend:
+    image: kwakujnr/clearenroll-frontend:latest
+    restart: unless-stopped
+    networks:
+      - clearenroll_net
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    volumes:
+      - ./deploy/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - clearenroll_net
+
+
+  watchtower:
+    image: containrrr/watchtower
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --interval 30
+    
+  volumes:
+    mysql_data:
+    backend_uploads:
