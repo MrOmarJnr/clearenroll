@@ -1,7 +1,10 @@
+version: "3.9"
+
 services:
 
   mysql:
     image: mysql:8.0
+    container_name: clearenroll_mysql
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -15,6 +18,7 @@ services:
 
   backend:
     image: kwakujnr/clearenroll-backend:latest
+    container_name: clearenroll_backend
     restart: unless-stopped
     env_file:
       - ./backend/.env.prod
@@ -27,12 +31,14 @@ services:
 
   frontend:
     image: kwakujnr/clearenroll-frontend:latest
+    container_name: clearenroll_frontend
     restart: unless-stopped
     networks:
       - clearenroll_net
 
   nginx:
     image: nginx:alpine
+    container_name: clearenroll_nginx
     restart: unless-stopped
     ports:
       - "80:80"
@@ -44,14 +50,21 @@ services:
     networks:
       - clearenroll_net
 
-
   watchtower:
     image: containrrr/watchtower
+    container_name: clearenroll_watchtower
     restart: unless-stopped
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     command: --interval 30
-    
-  volumes:
-    mysql_data:
-    backend_uploads:
+    networks:
+      - clearenroll_net
+
+
+networks:
+  clearenroll_net:
+
+
+volumes:
+  mysql_data:
+  backend_uploads:
