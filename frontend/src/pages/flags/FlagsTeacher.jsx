@@ -19,9 +19,9 @@ export default function FlagsTeacher() {
   const [flagReason, setFlagReason] = useState("");
   const [flagFiles, setFlagFiles] = useState([]);
 
-  // ===============================
+
   // AUTH SAFE
-  // ===============================
+
   const token = localStorage.getItem("token");
 
   const getUserSafe = () => {
@@ -41,9 +41,9 @@ export default function FlagsTeacher() {
 
   const user = getUserSafe();
 
-  // ===============================
+
   // LOAD
-  // ===============================
+
   const load = async () => {
     setError("");
     try {
@@ -58,9 +58,9 @@ export default function FlagsTeacher() {
     load();
   }, []);
 
-  // ===============================
+
   // SEARCH
-  // ===============================
+
   const filteredTeachers = teachers.filter((t) => {
     const term = search.toLowerCase();
     return (
@@ -71,9 +71,9 @@ export default function FlagsTeacher() {
     );
   });
 
-  // ===============================
+
   // PHOTO
-  // ===============================
+
   const renderTeacherPhoto = (photo, name) => {
     if (!photo) {
       const initials = name
@@ -114,9 +114,9 @@ export default function FlagsTeacher() {
     );
   };
 
-  // ===============================
+
   // PERMISSION
-  // ===============================
+
   const canModify = (teacher) => {
     if (!user) return false;
     if (user.role === "SUPER_ADMIN") return true;
@@ -131,9 +131,9 @@ export default function FlagsTeacher() {
     return false;
   };
 
-  // ===============================
+
   // FLAG
-  // ===============================
+ 
   const openFlagModal = (teacher) => {
     setSelectedTeacher(teacher);
     setFlagReason("");
@@ -174,9 +174,9 @@ export default function FlagsTeacher() {
     }
   };
 
-  // ===============================
+
   // CLEAR
-  // ===============================
+
   const handleClear = async (id) => {
     try {
       const ok = window.confirm(
@@ -191,9 +191,9 @@ export default function FlagsTeacher() {
     }
   };
 console.log("Actual pathname:", location.pathname);
-  // ===============================
+
   // RENDER
-  // ===============================
+
   return (
     <>
       <div className="card">
@@ -384,8 +384,7 @@ console.log("Actual pathname:", location.pathname);
               padding: 22,
               maxHeight: "90vh",
               overflowY: "auto",
-                width: "600px",
-            height: "400px"
+              height: "400px"
             }}
           >
             <h2>

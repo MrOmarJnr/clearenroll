@@ -1,244 +1,228 @@
 const express = require("express");
+const csv = require("csv-parser");
 const XLSX = require("xlsx");
+const fs = require("fs");
 
 module.exports = (pool, authMiddleware, upload) => {
   const router = express.Router();
 
-  // ======================
-  // parent import
-  // ======================
-  router.post(
-    "/parents",
-    authMiddleware,
-    upload.single("file"),
-    async (req, res) => {
-      const workbook = XLSX.readFile(req.file.path);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet);
-
-      let inserted = 0;
-      let skipped = 0;
-
-      for (const r of rows) {
-        if (!r.full_name || !r.phone) {
-          skipped++;
-          continue;
-        }
-
-        const [exists] = await pool.query(
-          "SELECT id FROM parents WHERE ghana_card_number = ?",
-          [r.ghana_card_number]
-        );
-
-        if (exists.length) {
-          skipped++;
-          continue;
-        }
-
-        await pool.query(
-          `
-          INSERT INTO parents (full_name, phone, ghana_card_number, address)
-          VALUES (?, ?, ?, ?)
-          `,
-          [r.full_name, r.phone, r.ghana_card_number || null, r.address || null]
-        );
-
-        inserted++;
-      }
-
-      res.json({ inserted, skipped });
-    }
-  );
-
-  // ======================
-  // student import 
-  // ======================
   router.post(
     "/students",
     authMiddleware,
     upload.single("file"),
     async (req, res) => {
-      const workbook = XLSX.readFile(req.file.path);
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(sheet, { defval: "" });
-
-      let inserted = 0;
-      let skipped = 0;
-      const rowErrors = [];
-
-      const norm = (v) =>
-        String(v || "")
-          .trim()
-          .toLowerCase()
-          .replace(/\s+/g, "");
-
-      for (let i = 0; i < rows.length; i++) {
-        const r = rows[i];
-
-        const first_name = String(r.first_name || "").trim();
-        const last_name = String(r.last_name || "").trim();
-        const date_of_birth = r.date_of_birth
-          ? String(r.date_of_birth).slice(0, 10)
-          : "";
-        const gender = String(r.gender || "").trim();
-        const schoolName = String(r.school || "").trim();
-        const parentName = String(r.parent || "").trim();
-
-        if (
-          !first_name ||
-          !last_name ||
-          !date_of_birth ||
-          !gender ||
-          !schoolName ||
-          !parentName
-        ) {
-          skipped++;
-          rowErrors.push({
-            row: i + 2,
-            error:
-              "Missing required fields (first_name, last_name, date_of_birth, gender, school, parent)",
-          });
-          continue;
-        }
-
-        if (gender !== "Male" && gender !== "Female") {
-          skipped++;
-          rowErrors.push({
-            row: i + 2,
-            error: "Invalid gender (must be Male or Female)",
-            value: gender,
-          });
-          continue;
-        }
-
-        let school = null;
-        {
-          const [[s1]] = await pool.query(
-            "SELECT id, name FROM schools WHERE name = ? LIMIT 1",
-            [schoolName]
-          );
-
-          if (s1) school = s1;
-
-          if (!school) {
-            const [[s2]] = await pool.query(
-              "SELECT id, name FROM schools WHERE LOWER(REPLACE(name,' ','')) = ? LIMIT 1",
-              [norm(schoolName)]
-            );
-            if (s2) school = s2;
-          }
-        }
-
-        if (!school) {
-          skipped++;
-          rowErrors.push({
-            row: i + 2,
-            error: "School not found in database (school must match schools.name)",
-            value: schoolName,
-          });
-          continue;
-        }
-
-        let parent = null;
-        {
-          const [[p1]] = await pool.query(
-            "SELECT id, full_name FROM parents WHERE full_name = ? LIMIT 1",
-            [parentName]
-          );
-
-          if (p1) parent = p1;
-
-          if (!parent) {
-            const [[p2]] = await pool.query(
-              "SELECT id, full_name FROM parents WHERE LOWER(REPLACE(full_name,' ','')) = ? LIMIT 1",
-              [norm(parentName)]
-            );
-            if (p2) parent = p2;
-          }
-        }
-
-        if (!parent) {
-          skipped++;
-          rowErrors.push({
-            row: i + 2,
-            error: "Parent not found in database (parent must match parents.full_name)",
-            value: parentName,
-          });
-          continue;
-        }
-
-        const [dup] = await pool.query(
-          `
-          SELECT id FROM students
-          WHERE LOWER(first_name) = LOWER(?)
-            AND LOWER(last_name) = LOWER(?)
-            AND date_of_birth = ?
-          LIMIT 1
-          `,
-          [first_name, last_name, date_of_birth]
-        );
-
-        if (dup.length) {
-          skipped++;
-          rowErrors.push({
-            row: i + 2,
-            error:
-              "Duplicate student (same first_name + last_name + date_of_birth already exists)",
-          });
-          continue;
-        }
-
-        const conn = await pool.getConnection();
-        try {
-          await conn.beginTransaction();
-
-          const [studentResult] = await conn.query(
-            `
-            INSERT INTO students
-            (first_name, last_name, date_of_birth, gender, current_school_id)
-            VALUES (?, ?, ?, ?, ?)
-            `,
-            [first_name, last_name, date_of_birth, gender, school.id]
-          );
-
-          const studentId = studentResult.insertId;
-
-          await conn.query(
-            `
-            INSERT INTO student_parents
-            (student_id, parent_id, relationship)
-            VALUES (?, ?, 'Guardian')
-            `,
-            [studentId, parent.id]
-          );
-
-          const systemStudentId = `STD-${studentId}`;
-
-          await conn.query(
-            `
-            INSERT INTO student_identifiers
-            (student_id, identifier_type, identifier_value, is_primary)
-            VALUES (?, 'SYSTEM_STUDENT_ID', ?, true)
-            `,
-            [studentId, systemStudentId]
-          );
-
-          await conn.commit();
-          inserted++;
-        } catch (err) {
-          await conn.rollback();
-          skipped++;
-          rowErrors.push({
-            row: i + 2,
-            error: "Insert failed",
-            details: err.message,
-          });
-        } finally {
-          conn.release();
-        }
+      if (!req.file) {
+        return res.status(400).json({ message: "File required" });
       }
 
-      res.json({ inserted, skipped, rowErrors });
+      const filePath = req.file.path;
+
+      // SAME SCHOOL VALUE USED EVERYWHERE
+      const currentSchoolId =
+        req.user.school_id || req.user.schoolId || req.user.current_school_id;
+
+      const reportedBySchoolId = currentSchoolId;
+
+      if (!currentSchoolId) {
+        return res.status(400).json({
+          message: "School ID not found on logged-in user",
+        });
+      }
+
+      let rows = [];
+
+      try {
+        // ================= CSV =================
+        if (req.file.mimetype.includes("csv")) {
+          await new Promise((resolve, reject) => {
+            fs.createReadStream(filePath)
+              .pipe(csv())
+              .on("data", (data) => rows.push(data))
+              .on("end", resolve)
+              .on("error", reject);
+          });
+        }
+
+        // ================= XLSX =================
+        else if (req.file.mimetype.includes("sheet")) {
+          const workbook = XLSX.readFile(filePath);
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          rows = XLSX.utils.sheet_to_json(sheet);
+        } else {
+          return res.status(400).json({ message: "Invalid file type" });
+        }
+
+        let inserted = 0;
+        let skipped = 0;
+        const rowErrors = [];
+
+        for (let i = 0; i < rows.length; i++) {
+          const row = rows[i];
+
+          const first_name = row.first_name?.trim();
+          const last_name = row.last_name?.trim();
+          const other_names = row.other_names || null;
+          const date_of_birth = row.date_of_birth;
+          const gender = row.gender || "Male";
+          const student_school_id = row.student_school_id || null;
+          const leaving_class = row.leaving_class || null;
+
+          const parent_full_name = row.parent_full_name?.trim();
+          const parent_phone = row.parent_phone?.trim();
+          const parent_ghana_card = row.parent_ghana_card || null;
+          const parent_address = row.parent_address || null;
+
+          const amount_owed = Number(row.amount_owed || 0);
+          const currency = row.currency || "GHS";
+          const reason = row.reason || null;
+
+          if (
+            !first_name ||
+            !last_name ||
+            !date_of_birth ||
+            !gender ||
+            !parent_full_name ||
+            !parent_phone
+          ) {
+            skipped++;
+            rowErrors.push({
+              row: i + 2,
+              error: "Missing required fields",
+            });
+            continue;
+          }
+
+          const conn = await pool.getConnection();
+
+          try {
+            await conn.beginTransaction();
+
+            // ================= STUDENT =================
+            const [studentResult] = await conn.query(
+              `
+              INSERT INTO students
+              (
+                first_name,
+                last_name,
+                other_names,
+                date_of_birth,
+                gender,
+                current_school_id,
+                student_school_id,
+                leaving_class
+              )
+              VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+              `,
+              [
+                first_name,
+                last_name,
+                other_names,
+                date_of_birth,
+                gender,
+                currentSchoolId,
+                student_school_id,
+                leaving_class,
+              ]
+            );
+
+            const studentId = studentResult.insertId;
+
+            // ================= PARENT =================
+            const [parentResult] = await conn.query(
+              `
+              INSERT INTO parents
+              (
+                full_name,
+                phone,
+                ghana_card_number,
+                address
+              )
+              VALUES (?, ?, ?, ?)
+              `,
+              [
+                parent_full_name,
+                parent_phone,
+                parent_ghana_card,
+                parent_address,
+              ]
+            );
+
+            const parentId = parentResult.insertId;
+
+            // ================= LINK STUDENT + PARENT =================
+            await conn.query(
+              `
+              INSERT INTO student_parents
+              (
+                student_id,
+                parent_id,
+                relationship
+              )
+              VALUES (?, ?, 'Guardian')
+              `,
+              [studentId, parentId]
+            );
+
+            // ================= FLAG =================
+            if (amount_owed > 0) {
+              await conn.query(
+                `
+                INSERT INTO flags
+                (
+                  student_id,
+                  parent_id,
+                  reported_by_school_id,
+                  amount_owed,
+                  currency,
+                  reason,
+                  status
+                )
+                VALUES (?, ?, ?, ?, ?, ?, 'FLAGGED')
+                `,
+                [
+                  studentId,
+                  parentId,
+                  reportedBySchoolId,
+                  amount_owed,
+                  currency,
+                  reason,
+                ]
+              );
+            }
+
+            await conn.commit();
+            inserted++;
+          } catch (err) {
+            await conn.rollback();
+
+            console.log("IMPORT ERROR ROW:", i + 2);
+            console.log("ROW DATA:", row);
+            console.log("ERROR:", err);
+
+            skipped++;
+            rowErrors.push({
+              row: i + 2,
+              error: err.message,
+            });
+          } finally {
+            conn.release();
+          }
+        }
+
+        fs.unlinkSync(filePath);
+
+        return res.json({
+          inserted,
+          skipped,
+          rowErrors,
+        });
+      } catch (err) {
+        console.error("IMPORT ERROR:", err);
+
+        return res.status(500).json({
+          message: "Student import failed",
+        });
+      }
     }
   );
 

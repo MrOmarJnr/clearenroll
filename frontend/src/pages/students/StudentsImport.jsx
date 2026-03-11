@@ -40,7 +40,18 @@ export default function StudentsImport() {
   return (
     <div className="card">
       <h2>Bulk Import Students</h2>
-      <p>Upload CSV or Excel file to import students.</p>
+      <p>Upload a CSV or Excel file to import students into the ClearEnroll registry.</p>
+
+      {/* TEMPLATE DOWNLOAD */}
+      <div style={{ marginBottom: 15 }}>
+        <a
+          href="/templates/students_import_template.csv"
+          download
+          className="btn"
+        >
+          Download Sample Template
+        </a>
+      </div>
 
       {/* FILE INPUT */}
       <div className="form-row">
@@ -53,7 +64,7 @@ export default function StudentsImport() {
 
       {/* ACTIONS */}
       <div className="form-actions">
-        <button className="btn" onClick={upload} disabled={loading}>
+        <button className="btn btn-primary" onClick={upload} disabled={loading}>
           {loading ? "Uploading..." : "Upload File"}
         </button>
 

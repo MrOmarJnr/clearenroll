@@ -141,7 +141,8 @@ useEffect(() => {
         "/teachersflag",
         "/teacherverify",
         "/teachers/import",
-         "/teachers/:id/edit"
+        "/teachers/:id/edit",
+        "/schools"
       ]
     }),
     []
@@ -357,7 +358,7 @@ useEffect(() => {
       {isAllowed("/students") && (
         <li
           className={sideLinkClass({
-            isActive: location.pathname.startsWith("/students"),
+            isActive: location.pathname==="/students",
           })}
         >
           <NavLink to="/students">
@@ -405,6 +406,31 @@ useEffect(() => {
           </NavLink>
         </li>
       )}
+        {isAllowed("/dashboard/analytics") && (
+    <li
+      className={sideLinkClass({
+        isActive: location.pathname.startsWith("/dashboard/analytics"),
+      })}
+    >
+      <NavLink to="/dashboard/analytics">
+        <i className="bx bxs-doughnut-chart" />
+        <span className="text">Students Analytics</span>
+      </NavLink>
+    </li>
+  )}
+
+    {isAllowed("/students/import") && (
+    <li
+      className={sideLinkClass({
+        isActive: location.pathname.startsWith("/students/import"),
+      })}
+    >
+      <NavLink to="/students/import" end>
+        <i className="bx bxs-doughnut-chart" />
+        <span className="text">Import Students</span>
+      </NavLink>
+    </li>
+  )}
 
       {isAllowed("/flags/audit") && (
         <li
@@ -418,6 +444,23 @@ useEffect(() => {
           </NavLink>
         </li>
       )}
+
+        {isAllowed("/duplicates") && (
+    <li
+      className={sideLinkClass({
+        isActive: location.pathname.startsWith("/duplicates"),
+      })}
+    >
+      <NavLink to="/duplicates">
+        <i className="bx bxs-copy" />
+        <span className="text">Duplicates</span>
+      </NavLink>
+    </li>
+  )}
+
+
+
+
     </>
   )}
 
@@ -499,31 +542,7 @@ useEffect(() => {
 
   {/* ===================== REMAINING MENU (100% UNCHANGED) ===================== */}
 
-  {isAllowed("/duplicates") && (
-    <li
-      className={sideLinkClass({
-        isActive: location.pathname.startsWith("/duplicates"),
-      })}
-    >
-      <NavLink to="/duplicates">
-        <i className="bx bxs-copy" />
-        <span className="text">Duplicates</span>
-      </NavLink>
-    </li>
-  )}
 
-  {isAllowed("/schools") && (
-    <li
-      className={sideLinkClass({
-        isActive: location.pathname.startsWith("/schools"),
-      })}
-    >
-      <NavLink to="/schools">
-        <i className="bx bxs-school" />
-        <span className="text">Schools</span>
-      </NavLink>
-    </li>
-  )}
 
   {isAllowed("/consents") && (
     <li
@@ -537,19 +556,21 @@ useEffect(() => {
       </NavLink>
     </li>
   )}
-
-  {isAllowed("/dashboard/analytics") && (
+    {isAllowed("/schools") && (
     <li
       className={sideLinkClass({
-        isActive: location.pathname.startsWith("/dashboard/analytics"),
+        isActive: location.pathname.startsWith("/schools"),
       })}
     >
-      <NavLink to="/dashboard/analytics">
-        <i className="bx bxs-doughnut-chart" />
-        <span className="text">Students Analytics</span>
+      <NavLink to="/schools">
+        <i className="bx bxs-school" />
+        <span className="text">Schools</span>
       </NavLink>
     </li>
   )}
+
+
+
 
   {isAllowed("/register") && (
     <li
