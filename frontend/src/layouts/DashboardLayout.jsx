@@ -616,7 +616,23 @@ useEffect(() => {
           {/* CONTENT */}
           <section id="content">
             <nav>
-              <div style={{ flex: 1 }} />
+           
+              <div className="nav-actions">
+                <button
+                  className="nav-btn verify-student"
+                  onClick={() => navigate("/verify")}
+                >
+                  Verify Student
+                </button>
+
+                <button
+                  className="nav-btn verify-teacher"
+                  onClick={() => navigate("/teacherverify")}
+                >
+                  Verify Teacher
+                </button>
+              </div>
+
               <div className="nav-right">
                 <div className="profile-wrapper">
                   <div
@@ -642,6 +658,8 @@ useEffect(() => {
                       {user?.full_name || "User"}
                     </span>
                   </div>
+                  
+                  
 
                   {profileOpen && (
                     <div className="profile-dropdown">
@@ -668,7 +686,9 @@ useEffect(() => {
                 onDecline={logout}
               />
 
+
               <Outlet />
+              
             </main>
           </section>
         </>

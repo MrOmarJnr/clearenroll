@@ -696,3 +696,39 @@ body {
 }
 
 
+nav {
+  display: flex;
+  align-items: center;
+}
+
+.nav-actions {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+.nav-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: 0.2s;
+  width: 200px;
+}
+
+.verify-student {
+  background: #b1a118;
+  color: white;
+}
+
+.verify-teacher {
+  background: #1f1a3f;
+  color: white;
+}
+
+.nav-btn:hover {
+  opacity: 0.9;
+	 background: #691a1a;
+}

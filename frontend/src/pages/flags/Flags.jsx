@@ -162,7 +162,6 @@ export default function Flags() {
               <th>Parent</th>
               <th>Reported By</th>
               <th>Location</th>
-              <th>Amount</th>
               <th>Status</th>
               <th className="td-right">Actions</th>
             </tr>
@@ -186,10 +185,7 @@ export default function Flags() {
                   <td>{f.parent || "-"}</td>
                   <td>{f.reported_by || "-"}</td>
                   <td>{f.school_location || "-"}</td>
-                  <td>
-                    {f.currency}{" "}
-                    {Number(f.amount_owed || 0).toLocaleString()}
-                  </td>
+                
                   <td>
                     {isFlagged ? (
                       <span className="badge badge-danger">FLAGGED</span>

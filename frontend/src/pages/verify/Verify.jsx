@@ -324,7 +324,6 @@ const formatDob = (dob) => {
                   <th>Student</th>
                   <th>Parent</th>
                   <th>School</th>
-                  <th>Amount Owed (GHS)</th>
                   <th>Status</th>
                 </tr>
               </thead>
@@ -335,7 +334,6 @@ const formatDob = (dob) => {
                       <td>{f.student}</td>
                       <td>{f.parent || "-"}</td>
                       <td>{f.reported_by}</td>
-                      <td>{Number(f.amount_owed || 0).toLocaleString()}</td>
                       <td>
                         <span className="badge badge-danger">FLAGGED</span>
                       </td>
@@ -436,7 +434,6 @@ const formatDob = (dob) => {
                     <tr>
                       <th>School</th>
                       <th>Reason</th>
-                      <th>Amount</th>
                       <th>Status</th>
                     </tr>
                   </thead>
@@ -445,9 +442,7 @@ const formatDob = (dob) => {
                       <tr key={f.id}>
                         <td>{f.reported_by}</td>
                         <td>{f.reason || "-"}</td>
-                        <td>
-                          {f.currency || "GHS"} {Number(f.amount_owed || 0).toLocaleString()}
-                        </td>
+                     
                         <td>
                           <span className="badge badge-danger">FLAGGED</span>
                         </td>

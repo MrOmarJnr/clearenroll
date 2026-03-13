@@ -173,7 +173,7 @@ const renderStudentPhoto = (photo, name) => {
       <div className="card">
         <div className="page-head">
           <div>
-            <h1 className="page-title">My Debtors / My students</h1>
+            <h1 className="page-title">My Debtors</h1>
             <div className="page-subtitle">
               View student records with outstanding fees or flags within your school
             </div>

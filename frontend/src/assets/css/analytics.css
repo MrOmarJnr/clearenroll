@@ -1,0 +1,93 @@
+/* =========================
+ANALYTICS TOOLBAR
+========================= */
+
+.analytics-toolbar {
+  margin-top: 18px;
+  padding: 16px;
+  background: #ffffff;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.filters-left {
+  display: flex;
+  gap: 14px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+
+.filter-field label {
+  margin-bottom: 4px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.filter-field input,
+.filter-field select {
+  padding: 8px 10px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #fafafa;
+  font-size: 14px;
+  min-width: 140px;
+}
+
+.filter-field input:focus,
+.filter-field select:focus {
+  border-color: #3b82f6;
+  outline: none;
+  background: white;
+}
+
+/* APPLY BUTTON */
+
+.apply-btn {
+  height: 36px;
+  padding: 0 18px;
+  background: #3b82f6;
+  color: white;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.apply-btn:hover {
+  background: #2563eb;
+}
+
+/* PRESET BUTTONS */
+
+.filters-right {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filters-right button {
+  padding: 7px 14px;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.filters-right button:hover {
+  background: #3b82f6;
+  color: white;
+  border-color: #3b82f6;
+}

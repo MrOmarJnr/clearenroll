@@ -686,3 +686,95 @@ html, body {
     z-index: 1000;
   }
 }
+
+
+
+/* =============================
+ANALYTICS FILTER BAR
+============================= */
+
+.analytics-filter-bar {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+/* =============================
+FILTER INPUTS
+============================= */
+
+.analytics-filter-group {
+  display: flex;
+  flex-direction: column;
+  font-size: 13px;
+}
+
+.analytics-filter-group label {
+  margin-bottom: 4px;
+  color: #6b7280;
+}
+
+.analytics-filter-group input,
+.analytics-filter-group select {
+  padding: 8px 10px !important;
+  border-radius: 6px !important;
+  border: 1px solid #d1d5db !important;
+  background: white !important;
+  min-width: 140px;
+}
+
+/* =============================
+APPLY BUTTON
+============================= */
+
+.analytics-filter-bar .analytics-apply {
+  padding: 10px 22px !important;
+  border-radius: 6px !important;
+  border: none !important;
+  background: #3b82f6 !important;
+  color: white !important;
+  cursor: pointer !important;
+  font-weight: 500;
+}
+
+.analytics-filter-bar .analytics-apply:hover {
+  background: #2563eb !important;
+}
+
+/* =============================
+PRESET BUTTONS
+============================= */
+
+.analytics-presets {
+  display: flex;
+  gap: 8px;
+  margin-left: 10px;
+}
+
+.analytics-presets button {
+  padding: 8px 14px !important;
+  border-radius: 6px !important;
+  border: 1px solid #d1d5db !important;
+  background: #ffffff !important;
+  color: #374151 !important;
+  opacity: 1 !important;
+  cursor: pointer !important;
+  font-size: 13px;
+  transition: all 0.2s ease;
+}
+
+/* hover */
+
+.analytics-presets button:hover {
+  background: #3b82f6 !important;
+  color: white !important;
+  border-color: #3b82f6 !important;
+}
+
+/* active */
+
+.analytics-presets button:active {
+  transform: scale(0.97);
+}

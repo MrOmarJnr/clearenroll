@@ -14,8 +14,6 @@ module.exports = (pool, authMiddleware, upload) => {
     try {
       if (!filePath) return;
 
-      // if stored as absolute disk path, use directly
-      // if stored as relative, resolve it from project root
       const resolved = path.isAbsolute(filePath)
         ? filePath
         : path.join(process.cwd(), filePath);
@@ -71,8 +69,7 @@ module.exports = (pool, authMiddleware, upload) => {
 
   /* ==========================================
      LIST TEACHERS
-     - keep your existing school restriction logic
-     - LEFT JOIN so CLEARED teachers (school_id NULL) don't disappear
+  
   ========================================== */
 
   router.get("/", authMiddleware, async (req, res) => {
@@ -86,7 +83,6 @@ module.exports = (pool, authMiddleware, upload) => {
 
     const params = [];
 
-    // keep your existing logic:
     // school admin only sees teachers currently engaged/flagged in their school.
     if (role === "SCHOOL_ADMIN") {
       sql += " WHERE t.current_school_id = ?";
@@ -101,7 +97,6 @@ module.exports = (pool, authMiddleware, upload) => {
 
   /* ==========================================
      CREATE TEACHER (PHOTO + MULTIPLE EVIDENCE)
-     (keeps your structure)
   ========================================== */
 
   router.post(
@@ -160,7 +155,7 @@ module.exports = (pool, authMiddleware, upload) => {
       try {
         await conn.beginTransaction();
 
-        // ✅ DB safety: if ENGAGED and reason missing, set empty string (avoid NOT NULL error)
+        // if ENGAGED and reason missing, set empty string (avoid NOT NULL error)
         const safeReason =
           (status || "ENGAGED") === "ENGAGED"
             ? String(reason || "")
@@ -274,8 +269,6 @@ module.exports = (pool, authMiddleware, upload) => {
 });
   /* ==========================================
      GET SINGLE TEACHER + EVIDENCE
-     ✅ Needed for Edit page
-     - keep school restriction logic
   ========================================== */
 
   router.get("/:id", authMiddleware, async (req, res) => {
@@ -330,9 +323,6 @@ module.exports = (pool, authMiddleware, upload) => {
 
   /* ==========================================
      UPDATE TEACHER (EDIT PAGE)
-     - optional teacher_photo
-     - optional add more evidence_files[]
-     - keeps school restriction logic
   ========================================== */
 
   router.put(
@@ -442,7 +432,7 @@ module.exports = (pool, authMiddleware, upload) => {
           ]
         );
 
-        // Add new evidence (do NOT wipe old)
+        // Add new evidence
         for (const file of evidenceFiles) {
           await conn.query(
             `
@@ -470,7 +460,7 @@ module.exports = (pool, authMiddleware, upload) => {
   );
 
   /* ==========================================
-     DELETE ONE EVIDENCE FILE (optional but useful for edit)
+     DELETE ONE EVIDENCE FILE 
      - removes db row + deletes file from disk
   ========================================== */
 
@@ -532,7 +522,6 @@ module.exports = (pool, authMiddleware, upload) => {
   /* ==========================================
      FLAG TEACHER
      - reason + optional evidence
-     - keeps your permission logic
   ========================================== */
 
   router.patch(

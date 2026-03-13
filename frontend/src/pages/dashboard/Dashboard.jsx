@@ -261,12 +261,11 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* TABLES (AdminHub table-data layout) */}
       <div className="table-data">
         {/* Recent Flags */}
         <div className="order">
           <div className="head">
-            <h3>Recent Flags</h3>
+            <h3>General Recent Flags</h3>
             <Link to="/flags" style={{ color: "var(--blue)", fontWeight: 600 }}>
               View all
             </Link>
@@ -278,7 +277,6 @@ export default function Dashboard() {
                 <th>Student</th>
                 <th>Parent</th>
                 <th>Reported By</th>
-                <th>Amount</th>
                 <th>Status</th>
               </tr>
             </thead>
@@ -289,7 +287,6 @@ export default function Dashboard() {
                   <td>{f.student}</td>
                   <td>{f.parent}</td>
                   <td>{f.reported_by}</td>
-                  <td>{f.amount_owed}</td>
                   <td>
                     <span className={statusClass(f.status)}>{f.status}</span>
                   </td>
@@ -343,7 +340,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* My Flag Activity (use todo panel, but as a compact list) */}
         <div className="todo">
           <div className="head">
             <h3>My Flag Activity</h3>
