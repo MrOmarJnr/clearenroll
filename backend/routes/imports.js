@@ -56,13 +56,27 @@ module.exports = (pool, authMiddleware, upload) => {
         let skipped = 0;
         const rowErrors = [];
 
+
+                const formatDate = (dateStr) => {
+          if (!dateStr) return null;
+
+          const parts = dateStr.split('/');
+
+          if (parts.length === 3) {
+            const [month, day, year] = parts;
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+          }
+
+          return dateStr;
+        };
+
         for (let i = 0; i < rows.length; i++) {
           const row = rows[i];
 
           const first_name = row.first_name?.trim();
           const last_name = row.last_name?.trim();
           const other_names = row.other_names || null;
-          const date_of_birth = row.date_of_birth;
+          const date_of_birth = formatDate(row.date_of_birth);
           const gender = row.gender || "Male";
           const student_school_id = row.student_school_id || null;
           const leaving_class = row.leaving_class || null;
