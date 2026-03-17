@@ -87,7 +87,7 @@ module.exports = (pool, authMiddleware) => {
     } = req.body;
 
     if (!student_id || !reported_by_school_id || amount_owed == null) {
-      return res.status(400).json({ message: "Missing required fields" });
+      return res.status(400).json({ message: "Enter a valid amount owed without comma or currency symbol" });
     }
 
     const currencyValue = currency === "USD" ? "USD" : "GHS";

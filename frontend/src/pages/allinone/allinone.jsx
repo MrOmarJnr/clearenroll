@@ -438,7 +438,7 @@ export default function CreateRecords() {
 
             <input
               className="input"
-              placeholder="Amount Owed"
+              placeholder="Amount Owed without comma or currency symbol"
               required
               onChange={(e) =>
                 setFlagForm({ ...flagForm, amount_owed: e.target.value })

@@ -46,6 +46,19 @@ module.exports = (pool, authMiddleware, upload) => {
         let inserted = 0;
         let skipped = 0;
 
+        const formatDate = (dateStr) => {
+          if (!dateStr) return null;
+
+          const parts = dateStr.split('/');
+
+          if (parts.length === 3) {
+            const [month, day, year] = parts;
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+          }
+
+          return dateStr; 
+        };
+
         for (const row of rows) {
           if (!row.first_name || !row.last_name) {
             skipped++;
@@ -74,7 +87,7 @@ module.exports = (pool, authMiddleware, upload) => {
               row.first_name,
               row.last_name,
               row.other_names || null,
-              row.date_of_birth,
+              formatDate(row.date_of_birth),   
               row.gender || "Male",
               row.phone || null,
               row.ghana_card_number || null,
