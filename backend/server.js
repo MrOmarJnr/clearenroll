@@ -158,6 +158,6 @@ app.use("/dashboard/analytics", require("./routes/dashboard.analytics")(pool, au
 
 // Start server
 
-app.listen(process.env.PORT, () => {
-  console.log(`API running on http://localhost:${process.env.PORT}`);
+app.listen(process.env.PORT || 4000, "0.0.0.0", () => {
+  console.log(`API running on http://0.0.0.0:${process.env.PORT || 4000}`);
 });
