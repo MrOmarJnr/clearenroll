@@ -189,9 +189,10 @@ module.exports = (pool, authMiddleware, upload) => {
                   amount_owed,
                   currency,
                   reason,
-                  status
+                  status,
+                  created_by_user_id
                 )
-                VALUES (?, ?, ?, ?, ?, ?, 'FLAGGED')
+                VALUES (?, ?, ?, ?, ?, ?, 'FLAGGED', ?)
                 `,
                 [
                   studentId,
@@ -200,6 +201,7 @@ module.exports = (pool, authMiddleware, upload) => {
                   amount_owed,
                   currency,
                   reason,
+                  req.user.userId || req.user.id
                 ]
               );
             }
