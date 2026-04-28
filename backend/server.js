@@ -116,6 +116,9 @@ app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
 
+const tenantMiddleware = require("./middleware/tenant");
+app.use(tenantMiddleware);
+
 
 // routes
 
