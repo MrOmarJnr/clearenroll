@@ -23,37 +23,96 @@ module.exports = (pool, authMiddleware) => {
   });
 
   // create
-  router.post("/", authMiddleware, async (req, res) => {
-    const parsed = parentSchema.safeParse(req.body);
-    if (!parsed.success) {
-      return res.status(400).json(parsed.error.flatten());
-    }
+ // create
+router.post("/", authMiddleware, async (req, res) => {
+  const parsed = parentSchema.safeParse(req.body);
 
-    const { full_name, phone, ghana_card_number, address } = parsed.data;
+  if (!parsed.success) {
+    return res.status(400).json(parsed.error.flatten());
+  }
 
-    if (ghana_card_number) {
-      const [exists] = await pool.query(
-        "SELECT id FROM parents WHERE ghana_card_number = ?",
-        [ghana_card_number]
-      );
-      if (exists.length) {
-        return res.status(409).json({ message: "Parent already exists" });
-      }
-    }
+  const {
+    full_name,
+    phone,
+    ghana_card_number,
+    address,
+  } = parsed.data;
 
-    const [result] = await pool.query(
+  // =========================
+  // CHECK GHANA CARD FIRST
+  // =========================
+
+  if (ghana_card_number) {
+    const [existingCard] = await pool.query(
       `
-      INSERT INTO parents (full_name, phone, ghana_card_number, address)
-      VALUES (?, ?, ?, ?)
+      SELECT id
+      FROM parents
+      WHERE ghana_card_number = ?
+      LIMIT 1
       `,
-      [full_name, phone, ghana_card_number || null, address || null]
+      [ghana_card_number]
     );
 
-    res.status(201).json({
-      message: "Parent added successfully",
-      parent_id: result.insertId,
+    if (existingCard.length) {
+      return res.status(200).json({
+        message: "Existing parent linked",
+        parent_id: existingCard[0].id,
+        existing: true,
+      });
+    }
+  }
+
+  // =========================
+  // CHECK PHONE NEXT
+  // =========================
+
+  const [existingPhone] = await pool.query(
+    `
+    SELECT id
+    FROM parents
+    WHERE phone = ?
+    LIMIT 1
+    `,
+    [phone]
+  );
+
+  if (existingPhone.length) {
+    return res.status(200).json({
+      message: "Existing parent linked",
+      parent_id: existingPhone[0].id,
+      existing: true,
     });
+  }
+
+  // =========================
+  // CREATE NEW PARENT
+  // =========================
+
+  const [result] = await pool.query(
+    `
+    INSERT INTO parents
+    (
+      full_name,
+      phone,
+      ghana_card_number,
+      address
+    )
+    VALUES (?, ?, ?, ?)
+    `,
+    [
+      full_name,
+      phone,
+      ghana_card_number || null,
+      address || null,
+    ]
+  );
+
+  res.status(201).json({
+    message: "Parent added successfully",
+    parent_id: result.insertId,
+    existing: false,
   });
+});
 
   // update
   router.put("/:id", authMiddleware, async (req, res) => {
@@ -86,6 +145,14 @@ module.exports = (pool, authMiddleware) => {
     }
     res.json({ parent: rows[0] });
   });
+
+
+
+
+
+
+
+  
 
   return router;
 };

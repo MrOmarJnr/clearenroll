@@ -67,7 +67,6 @@ module.exports = (pool, authMiddleware, upload) => {
     `;
 
     const params = [];
-
     //  Show records for only my SCHOOL_ADMIN for only their school
     if (role === "SCHOOL_ADMIN") {
       sql += " WHERE s.current_school_id = ?";
@@ -147,10 +146,14 @@ module.exports = (pool, authMiddleware, upload) => {
           const [insertResult] = await pool.query(
             `
             INSERT INTO duplicate_reviews
-              (existing_student_id, attempted_student_snapshot)
-            VALUES (?, ?)
+              (
+                existing_student_id,
+                attempted_student_snapshot,
+                reported_by_school_id
+              )
+              VALUES (?, ?, ?)
             `,
-            [
+           [
               matches[0].id,
               JSON.stringify({
                 first_name,
@@ -163,6 +166,7 @@ module.exports = (pool, authMiddleware, upload) => {
                 student_school_id,
                 student_photo: studentPhotoFilename,
               }),
+              schoolIdNum
             ]
           );
 
@@ -354,12 +358,12 @@ module.exports = (pool, authMiddleware, upload) => {
           current_school_id,
           student_school_id || null,
           leaving_class || null,
-          studentPhotoFilename, // ✅ only updates if new photo
+          studentPhotoFilename, 
           req.params.id,
         ]
       );
 
-      // 🔁 KEEP YOUR PARENT LOGIC EXACTLY
+      //  KEEP YOUR PARENT LOGIC EXACTLY
       if (parent_id) {
         const [existing] = await conn.query(
           "SELECT id FROM student_parents WHERE student_id = ? LIMIT 1",

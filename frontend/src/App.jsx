@@ -11,7 +11,8 @@ import DashboardLayout from "./layouts/DashboardLayout";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import LoginLogs from "./pages/audit/LoginLogs";
-
+import ResetPassword from "./pages/auth/ResetPassword";
+import VerifyOTP from "./pages/auth/VerifyOTP";
 
 /* ================= CORE ================= */
 import Dashboard from "./pages/dashboard/Dashboard";
@@ -63,7 +64,8 @@ export default function App() {
 
         {/* ================= PUBLIC ================= */}
         <Route path="/login" element={<Login />} />
-    
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/activate-account" element={<ActivateAccount />} />
         {/* ================= PROTECTED ================= */}
         <Route

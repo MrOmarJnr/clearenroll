@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Navigate, useSearchParams } from "react-router-dom";
-import { jwtDecode } from "jwt-decode";
 
 import "../../assets/css/util.css";
 import "../../assets/css/main.css";
@@ -38,27 +37,50 @@ export default function Login() {
     });
   }, [email, password]);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    setError("");
+const handleLogin = async (e) => {
+  e.preventDefault();
+  setError("");
 
-    try {
-      const res = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
-      });
+  try {
+    const res = await fetch(`${API_URL}/auth/login`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+    });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Login failed");
+    const data = await res.json();
 
-      localStorage.setItem("token", data.token);
-      jwtDecode(data.token);
-      navigate("/dashboard", { replace: true });
-    } catch (err) {
-      setError(err.message);
+    if (!res.ok) {
+      throw new Error(
+        data.message || "Login failed"
+      );
     }
-  };
+
+    // OTP FLOW
+    if (data.otp_required) {
+      sessionStorage.setItem(
+        "otp_user_id",
+        data.userId
+      );
+
+      sessionStorage.setItem(
+        "otp_email",
+        data.email
+      );
+
+      navigate("/verify-otp");
+      return;
+    }
+
+  } catch (err) {
+    setError(err.message);
+  }
+};
 
   return (
     <div className="auth-container">

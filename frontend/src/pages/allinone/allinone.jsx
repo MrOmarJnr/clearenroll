@@ -186,29 +186,40 @@ export default function CreateRecords() {
     }
   };
 
-  const submitParent = async (e) => {
-    e.preventDefault();
-    setError("");
+const submitParent = async (e) => {
+  e.preventDefault();
+  setError("");
 
-    try {
-      const res = await api("/parents", {
-        method: "POST",
-        body: JSON.stringify(parentForm),
-      });
+  try {
+    const res = await api("/parents", {
+      method: "POST",
+      body: JSON.stringify(parentForm),
+    });
 
-      await api(`/students/${createdStudentId}/assign-parent`, {
-        method: "PATCH",
-        body: JSON.stringify({ parent_id: res.parent_id }),
-      });
+    await api(`/students/${createdStudentId}/assign-parent`, {
+      method: "PATCH",
+      body: JSON.stringify({
+        parent_id: res.parent_id,
+      }),
+    });
 
-      const stu = await api("/students");
-      setStudents(stu.students || []);
+    setStep("flag");
 
-      setStep("flag");
-    } catch (err) {
+  } catch (err) {
+
+    if (
+      err.message.includes("full_name")
+    ) {
+      setError("Please enter parent full name");
+    } else if (
+      err.message.includes("phone")
+    ) {
+      setError("Please enter a valid phone number");
+    } else {
       setError(err.message);
     }
-  };
+  }
+};
 
   const submitFlag = async (e) => {
     e.preventDefault();

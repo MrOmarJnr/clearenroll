@@ -27,7 +27,7 @@ export default function Users() {
   const reset = async (id) => {
     if (!confirm("Reset password?")) return;
     await api(`/users/${id}/reset-password`, { method: "POST" });
-    alert("Temporary password generated (check server logs)");
+    alert("Password reset link has been sent to the user's email.");
   };
 
   return (

@@ -1,25 +1,21 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import "../../assets/css/create-records.css"; 
+import "../../assets/css/create-records.css";
 
 export default function Register() {
-
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
   const [schoolId, setSchoolId] = useState("");
   const [schools, setSchools] = useState([]);
-    const [fullname, setFullname] = useState("");
+  const [fullname, setFullname] = useState("");
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
 
-
-
   const [profilePhoto, setProfilePhoto] = useState(null);
   const [photoPreview, setPhotoPreview] = useState(null);
 
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+  const API_BASE =
+    import.meta.env.VITE_API_URL || "http://localhost:4000";
 
   // ===== LOAD SCHOOLS =====
   useEffect(() => {
@@ -27,18 +23,24 @@ export default function Register() {
       try {
         const res = await fetch(`${API_BASE}/auth/schools`);
         const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to load schools");
+
+        if (!res.ok) {
+          throw new Error(data.message || "Failed to load schools");
+        }
+
         setSchools(data.schools || []);
       } catch (err) {
         setError(err.message);
       }
     };
+
     loadSchools();
   }, [API_BASE]);
 
   // ===== PHOTO =====
   const handlePhotoChange = (e) => {
     const file = e.target.files[0];
+
     if (!file) return;
 
     setProfilePhoto(file);
@@ -50,11 +52,6 @@ export default function Register() {
     e.preventDefault();
     setError("");
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match");
-      return;
-    }
-
     if (!schoolId) {
       setError("Please select a school");
       return;
@@ -62,9 +59,8 @@ export default function Register() {
 
     try {
       const formData = new FormData();
+
       formData.append("email", email);
-      formData.append("password", password);
-      formData.append("confirmPassword", confirmPassword);
       formData.append("school_id", schoolId);
       formData.append("fullname", fullname);
 
@@ -77,11 +73,24 @@ export default function Register() {
         body: formData,
       });
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.message || "Registration failed");
+      let data;
+
+      try {
+        data = await res.json();
+      } catch {
+        if (res.status === 413) {
+          throw new Error("Selected image is too large. Please upload an image under 5MB.");
+        }
+
+        throw new Error("An unexpected server error occurred.");
+      }
+
+      if (!res.ok) {
+        throw new Error(data.message || "Registration failed");
+      }
 
       alert("Account created. Activation email sent.");
-          navigate("/users");
+      navigate("/users");
     } catch (err) {
       setError(err.message);
     }
@@ -92,7 +101,10 @@ export default function Register() {
       {/* HEADER */}
       <div className="create-records-head">
         <div>
-          <div className="create-records-title">Create User Account</div>
+          <div className="create-records-title">
+            Create User Account
+          </div>
+
           <div className="create-records-subtitle">
             School administrator onboarding
           </div>
@@ -102,7 +114,6 @@ export default function Register() {
       {/* STEPPER */}
       <div className="stepper">
         <div className="step active">Account</div>
-    
       </div>
 
       {/* FORM */}
@@ -129,34 +140,15 @@ export default function Register() {
               <option value="" disabled>
                 Select School
               </option>
+
               {schools.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
                 </option>
               ))}
             </select>
-            
-            <input
-              className="input"
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-
-           
 
             <input
-              className="input"
-              type="password"
-              placeholder="Confirm Password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-
-             <input
               className="input"
               type="text"
               placeholder="Full Name"
@@ -165,15 +157,15 @@ export default function Register() {
               required
             />
 
-    
-             <div className="form-field">
-            <label className="label">Photo</label>
-            <input
-             type="file"
-              accept="image/*"
-              onChange={handlePhotoChange}
-            />
-          </div>
+            <div className="form-field">
+              <label className="label">Photo</label>
+
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+              />
+            </div>
 
             {photoPreview && (
               <div>
@@ -193,13 +185,21 @@ export default function Register() {
           </div>
 
           {error && (
-            <div style={{ color: "#dc2626", marginTop: 12 }}>
+            <div
+              style={{
+                color: "#dc2626",
+                marginTop: 12,
+              }}
+            >
               {error}
             </div>
           )}
 
           <div className="form-footer">
-            <button type="submit" className="btn btn-primary">
+            <button
+              type="submit"
+              className="btn btn-primary"
+            >
               Create Account
             </button>
           </div>

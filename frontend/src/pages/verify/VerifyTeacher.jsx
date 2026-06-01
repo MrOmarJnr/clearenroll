@@ -233,7 +233,11 @@ export default function VerifyTeacher() {
                           {t.first_name} {t.last_name}
                         </td>
 
-                        <td>{t.school}</td>
+                       <td>
+                          {t.status === "FLAGGED"
+                            ? t.school
+                            : "Protected"}
+                        </td>
 
                         {/* STATUS COLUMN */}
                         <td>
@@ -305,9 +309,11 @@ export default function VerifyTeacher() {
                   {selectedTeacher.first_name}{" "}
                   {selectedTeacher.last_name}
                 </h2>
-                <div style={{ opacity: 0.7 }}>
-                  {selectedTeacher.school}
-                </div>
+               {selectedTeacher.status === "FLAGGED" && (
+            <div style={{ opacity: 0.7 }}>
+              {selectedTeacher.school}
+            </div>
+          )}
               </div>
 
               {renderTeacherPhoto(

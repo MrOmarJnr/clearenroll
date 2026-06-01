@@ -87,6 +87,15 @@ router.post("/", authMiddleware, async (req, res) => {
       t.evidence = evidenceMap[t.id] || [];
     });
 
+teachers.forEach(t => {
+  if (String(t.status).toUpperCase() !== "FLAGGED") {
+    t.school = null;
+    t.school_id = null;
+    t.reason = null;
+    t.evidence = [];
+  }
+});
+
     // =============================
     //  SUMMARY LOGIC
     // =============================

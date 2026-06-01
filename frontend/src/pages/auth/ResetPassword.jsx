@@ -7,7 +7,7 @@ import "../../assets/css/auth-layout.css";
 
 import backgroundImage from "../../assets/images/backgroundimg.jpeg";
 
-export default function ActivateAccount() {
+export default function ResetPassword() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 
@@ -46,14 +46,14 @@ export default function ActivateAccount() {
   useEffect(() => {
     const validateToken = async () => {
       if (!token) {
-        setError("Invalid activation link");
+        setError("Invalid password reset link");
         setLoading(false);
         return;
       }
 
       try {
         const res = await fetch(
-          `${API_URL}/auth/activation-token/${token}`
+          `${API_URL}/auth/reset-token/${token}`
         );
 
         const data = await res.json();
@@ -61,7 +61,7 @@ export default function ActivateAccount() {
         if (!res.ok || !data.valid) {
           throw new Error(
             data.message ||
-              "Activation link is invalid or expired"
+              "Password reset link is invalid or expired"
           );
         }
 
@@ -78,7 +78,7 @@ export default function ActivateAccount() {
     validateToken();
   }, [API_URL, token]);
 
-  const handleActivate = async (e) => {
+  const handleReset = async (e) => {
     e.preventDefault();
 
     setError("");
@@ -102,33 +102,37 @@ export default function ActivateAccount() {
     }
 
     try {
-      const res = await fetch(`${API_URL}/auth/activate`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          token,
-          password,
-          confirmPassword,
-        }),
-      });
+      const res = await fetch(
+        `${API_URL}/auth/reset-password`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            token,
+            password,
+            confirmPassword,
+          }),
+        }
+      );
 
       const data = await res.json();
 
       if (!res.ok) {
         throw new Error(
-          data.message || "Activation failed"
+          data.message || "Password reset failed"
         );
       }
 
       setSuccess(
-        "Account activated successfully. Redirecting to login..."
+        "Password reset successfully. Redirecting to login..."
       );
 
       setTimeout(() => {
-         localStorage.removeItem("token");
-        navigate("/login?activated=1", { replace: true });
+        navigate("/login", {
+          replace: true,
+        });
       }, 2500);
     } catch (err) {
       setError(err.message);
@@ -142,7 +146,7 @@ export default function ActivateAccount() {
         <h2>ClearEnroll School Portal</h2>
 
         <p style={{ color: "#f4f4f4" }}>
-          Activate your account and create a password
+          Reset your password
         </p>
 
         {loading && (
@@ -152,7 +156,7 @@ export default function ActivateAccount() {
               marginTop: 20,
             }}
           >
-            Validating activation link...
+            Validating password reset link...
           </div>
         )}
 
@@ -193,7 +197,7 @@ export default function ActivateAccount() {
 
             <form
               className="login100-form"
-              onSubmit={handleActivate}
+              onSubmit={handleReset}
             >
               <div className="wrap-input100">
                 <span
@@ -225,7 +229,7 @@ export default function ActivateAccount() {
 
                 <span
                   className="focus-input100"
-                  data-placeholder="Create Password"
+                  data-placeholder="New Password"
                 />
               </div>
 
@@ -265,7 +269,7 @@ export default function ActivateAccount() {
 
                 <span
                   className="focus-input100"
-                  data-placeholder="Confirm Password"
+                  data-placeholder="Confirm New Password"
                 />
               </div>
 
@@ -300,13 +304,12 @@ export default function ActivateAccount() {
                 className="login100-form-btn"
                 type="submit"
               >
-                Activate Account
+                Reset Password
               </button>
             </form>
           </>
         )}
 
-        {/* FOOTER */}
         <div className="auth-footer-disclaimer">
           By enrolling on this platform, you agree to the
           intended use of its contents. Any misuse of the

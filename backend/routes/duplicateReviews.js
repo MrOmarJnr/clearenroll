@@ -7,29 +7,48 @@ module.exports = (pool, auth) => {
    * GET /duplicates/pending
    * List all unresolved duplicate reviews
    */
-  router.get("/pending", auth, async (req, res) => {
-    try {
-      const [rows] = await pool.query(`
-        SELECT
-          dr.id,
-          dr.created_at,
-          dr.attempted_student_snapshot,
-          s.first_name,
-          s.last_name,
-          s.date_of_birth
-        FROM duplicate_reviews dr
-        JOIN students s ON s.id = dr.existing_student_id
-        WHERE dr.decision IS NULL
-        ORDER BY dr.created_at DESC
-      `);
+router.get("/pending", auth, async (req, res) => {
+  try {
 
-      res.json(rows);
-    } catch (err) {
-      console.error("FETCH DUPLICATES FAILED:", err);
-      res.status(500).json({ message: "Failed to load duplicate reviews" });
+    let sql = `
+      SELECT
+        dr.id,
+        dr.created_at,
+        dr.attempted_student_snapshot,
+        dr.reported_by_school_id,
+        s.first_name,
+        s.last_name,
+        s.date_of_birth
+      FROM duplicate_reviews dr
+      JOIN students s
+        ON s.id = dr.existing_student_id
+      WHERE dr.decision IS NULL
+    `;
+
+    const params = [];
+
+    if (req.user.role === "SCHOOL_ADMIN") {
+      sql += `
+        AND dr.reported_by_school_id = ?
+      `;
+      params.push(req.user.school_id);
     }
-  });
 
+    sql += `
+      ORDER BY dr.created_at DESC
+    `;
+
+    const [rows] = await pool.query(sql, params);
+
+    res.json(rows);
+
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({
+      message: "Failed to load duplicate reviews"
+    });
+  }
+});
   /**
    * POST /duplicates/:id/resolve
    * Resolve a duplicate review

@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "nodemailer": "^8.0.10",
     "recharts": "^3.7.0"
   }
 }

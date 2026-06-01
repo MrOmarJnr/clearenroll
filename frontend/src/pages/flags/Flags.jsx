@@ -163,7 +163,7 @@ export default function Flags() {
               <th>Reported By</th>
               <th>Location</th>
               <th>Status</th>
-              <th className="td-right">Actions</th>
+           
             </tr>
           </thead>
 
@@ -194,16 +194,7 @@ export default function Flags() {
                     )}
                   </td>
 
-                  <td className="td-center" style={{ width: 100 }}>
-                    {canClear && (
-                      <button
-                        className="btn btn-danger"
-                        onClick={() => clearFlag(f.id)}
-                      >
-                        Clear
-                      </button>
-                    )}
-                  </td>
+                  
                 </tr>
               );
             })}
