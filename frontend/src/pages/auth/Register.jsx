@@ -7,6 +7,7 @@ export default function Register() {
   const [schoolId, setSchoolId] = useState("");
   const [schools, setSchools] = useState([]);
   const [fullname, setFullname] = useState("");
+  const [phone, setPhone] = useState("");
   const [error, setError] = useState("");
 
   const navigate = useNavigate();
@@ -63,7 +64,7 @@ export default function Register() {
       formData.append("email", email);
       formData.append("school_id", schoolId);
       formData.append("fullname", fullname);
-
+      formData.append("phone", phone);
       if (profilePhoto) {
         formData.append("profile_photo", profilePhoto);
       }
@@ -154,6 +155,15 @@ export default function Register() {
               placeholder="Full Name"
               value={fullname}
               onChange={(e) => setFullname(e.target.value)}
+              required
+            />
+
+            <input
+              className="input"
+              type="text"
+              placeholder="Administrator Phone Number"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
               required
             />
 

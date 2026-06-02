@@ -365,7 +365,7 @@ router.post(
   uploadUser.single("profile_photo"),
   async (req, res) => {
     try {
-      const { email, fullname, school_id } = req.body;
+      const { email, fullname, school_id, phone} = req.body;
 
       const profilePhoto = req.file
         ? `uploads/users/${req.file.filename}`
@@ -411,30 +411,34 @@ router.post(
 
       const activationToken = crypto.randomBytes(32).toString("hex");
 
-      await pool.query(
-        `
-        INSERT INTO users
-          (
-            email,
-            password_hash,
-            role_id,
-            school_id,
-            profile_photo,
-            is_active,
-            activation_token,
-            full_name
-          )
-        VALUES (?, NULL, ?, ?, ?, 0, ?, ?)
-        `,
-        [
-          email,
-          role.id,
-          school_id,
-          profilePhoto,
-          activationToken,
-          fullname,
-        ]
-      );
+    await pool.query(
+  `
+  INSERT INTO users
+  (
+    email,
+    password_hash,
+    role_id,
+    school_id,
+    profile_photo,
+    phone,
+    is_active,
+    activation_token,
+    full_name
+  )
+  VALUES (?, NULL, ?, ?, ?, ?, 0, ?, ?)
+  `,
+  [
+    email,
+    role.id,
+    school_id,
+    profilePhoto,
+    phone,
+    activationToken,
+    fullname,
+  ]
+);  
+
+
 
       const activationLink =
         `${process.env.CLIENT_ORIGIN}/activate-account?token=${activationToken}`;

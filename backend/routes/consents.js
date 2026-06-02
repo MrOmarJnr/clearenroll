@@ -85,7 +85,7 @@ router.post("/:id/approve", auth, async (req, res) => {
       });
     }
 
-    console.log("✅ CONSENT GRANTED:", id);
+    console.log("CONSENT GRANTED:", id);
 
     res.json({ message: "Consent granted" });
   } catch (err) {

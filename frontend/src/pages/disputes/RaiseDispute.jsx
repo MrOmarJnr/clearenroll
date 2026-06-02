@@ -24,7 +24,7 @@ export default function RaiseDispute() {
         }),
       });
 
-      setMessage("✅ Dispute raised successfully.");
+      setMessage("Dispute raised successfully.");
       setStudentId("");
       setReason("");
       setDescription("");

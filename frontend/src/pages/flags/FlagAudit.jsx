@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "../../services/api";
-import "../../assets/css/dashboard.css"; // ✅ ensures shared styles
+import "../../assets/css/dashboard.css"; // ensures shared styles
 
 export default function FlagAudit() {
   const [logs, setLogs] = useState([]);

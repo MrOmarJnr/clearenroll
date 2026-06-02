@@ -200,9 +200,9 @@ export default function VerifyTeacher() {
                   <h3>Search Summary</h3>
 
                   <div style={{ display: "flex", gap: 20, marginTop: 10 }}>
-                    <div className="badge badge-success">
+                    {/* <div className="badge badge-success">
                       ENGAGED: {result.summary?.engaged || 0}
-                    </div>
+                    </div> */}
 
                     <div className="badge badge-danger">
                       FLAGGED: {result.summary?.flagged || 0}

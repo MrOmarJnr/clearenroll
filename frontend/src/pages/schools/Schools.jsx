@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { api } from "../../services/api";
 import { jwtDecode } from "jwt-decode";
+import { FaWhatsapp } from "react-icons/fa";
+import { MdEmail } from "react-icons/md";
 
 export default function Schools() {
   const [schools, setSchools] = useState([]);
@@ -132,32 +134,90 @@ export default function Schools() {
           />
         </div>
 
-        <div className="table-wrap">
-          <table className="table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>School Name</th>
-                <th>Location</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredSchools.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.id}</td>
-                  <td>{s.name}</td>
-                  <td>{s.location || "-"}</td>
-                </tr>
-              ))}
+       <div className="table-wrap">
+  <table className="table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>School Name</th>
+        <th>Location</th>
+        <th>Administrator</th>
+        <th>Phone</th>
+        <th>Contact</th>
+      </tr>
+    </thead>
 
-              {!filteredSchools.length && (
-                <tr>
-                  <td colSpan="3">No matching schools found.</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+    <tbody>
+      {filteredSchools.map((s) => (
+        <tr key={s.id}>
+          <td>{s.id}</td>
+
+          <td>{s.name}</td>
+
+          <td>{s.location || "-"}</td>
+
+          <td>{s.admin_name || "-"}</td>
+
+          <td>{s.phone || "-"}</td>
+<td>
+  <div
+    style={{
+      display: "flex",
+      gap: "8px",
+    }}
+  >
+    {s.phone && (
+      <a
+        href={`https://wa.me/${s.phone.replace(/\D/g, "")}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          background: "#25D366",
+          color: "#fff",
+          padding: "8px 10px",
+          borderRadius: "8px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <FaWhatsapp />
+      </a>
+    )}
+
+    {s.email && (
+      <a
+        href={`mailto:${s.email}`}
+        style={{
+          background: "#2563eb",
+          color: "#fff",
+          padding: "8px 10px",
+          borderRadius: "8px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <MdEmail />
+      </a>
+    )}
+  </div>
+</td>
+        </tr>
+      ))}
+
+      {!filteredSchools.length && (
+        <tr>
+          <td colSpan="6">
+            No matching schools found.
+          </td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</div>
+
+
       </div>
     </>
   );

@@ -290,7 +290,55 @@ module.exports = (pool, authMiddleware, upload) => {
   });
 
   // get single
-  router.get("/:id", authMiddleware, async (req, res) => {
+ // get single
+router.get("/:id", authMiddleware, async (req, res) => {
+  const [rows] = await pool.query(
+    `
+    SELECT
+      s.*,
+      sp.parent_id,
+
+      (
+        SELECT f.id
+        FROM flags f
+        WHERE f.student_id = s.id
+        AND f.status = 'FLAGGED'
+        ORDER BY f.created_at DESC
+        LIMIT 1
+      ) AS flag_id,
+
+      (
+        SELECT f.amount_owed
+        FROM flags f
+        WHERE f.student_id = s.id
+        AND f.status = 'FLAGGED'
+        ORDER BY f.created_at DESC
+        LIMIT 1
+      ) AS amount_owed,
+
+      (
+        SELECT f.reason
+        FROM flags f
+        WHERE f.student_id = s.id
+        AND f.status = 'FLAGGED'
+        ORDER BY f.created_at DESC
+        LIMIT 1
+      ) AS flag_reason
+
+    FROM students s
+    LEFT JOIN student_parents sp
+      ON sp.student_id = s.id
+    WHERE s.id = ?
+    `,
+    [req.params.id]
+  );
+
+  if (!rows.length) {
+    return res.status(404).json({ message: "Not found" });
+  }
+
+  res.json({ student: rows[0] });
+}); router.get("/:id", authMiddleware, async (req, res) => {
     const [rows] = await pool.query(
       `
       SELECT
@@ -310,6 +358,12 @@ module.exports = (pool, authMiddleware, upload) => {
 
     res.json({ student: rows[0] });
   });
+
+
+
+
+
+
 
   // update
  router.put(

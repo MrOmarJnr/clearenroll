@@ -11,7 +11,7 @@ export default function AddStudent() {
   const [isDuplicate, setIsDuplicate] = useState(false);
   const [duplicateMatches, setDuplicateMatches] = useState([]);
 
-  // ✅ MATCH ALL-IN-ONE STUDENT FORM
+  // MATCH ALL-IN-ONE STUDENT FORM
   const [studentForm, setStudentForm] = useState({
     first_name: "",
     last_name: "",

@@ -3,35 +3,126 @@ const express = require("express");
 module.exports = (pool, authMiddleware) => {
   const router = express.Router();
 
-  // GET /api/schools
+  // =====================================
+  // GET ALL SCHOOLS
+  // =====================================
   router.get("/", authMiddleware, async (req, res) => {
-    const [rows] = await pool.query(`
-      SELECT id, name, location, is_verified, created_at
-      FROM schools
-      ORDER BY created_at DESC
-    `);
-    res.json({ schools: rows });
+    try {
+      const [rows] = await pool.query(`
+        SELECT
+          s.id,
+          s.name,
+          s.location,
+          s.is_verified,
+          s.created_at,
+
+          (
+            SELECT u.full_name
+            FROM users u
+            JOIN roles r ON r.id = u.role_id
+            WHERE
+              u.school_id = s.id
+              AND r.name = 'SCHOOL_ADMIN'
+            ORDER BY u.id DESC
+            LIMIT 1
+          ) AS admin_name,
+
+          (
+            SELECT u.phone
+            FROM users u
+            JOIN roles r ON r.id = u.role_id
+            WHERE
+              u.school_id = s.id
+              AND r.name = 'SCHOOL_ADMIN'
+            ORDER BY u.id DESC
+            LIMIT 1
+          ) AS phone,
+
+          (
+            SELECT u.email
+            FROM users u
+            JOIN roles r ON r.id = u.role_id
+            WHERE
+              u.school_id = s.id
+              AND r.name = 'SCHOOL_ADMIN'
+            ORDER BY u.id DESC
+            LIMIT 1
+          ) AS email
+
+        FROM schools s
+        ORDER BY s.created_at DESC
+      `);
+
+      res.json({
+        schools: rows,
+      });
+
+    } catch (err) {
+      console.error("SCHOOLS LIST ERROR:", err);
+
+      res.status(500).json({
+        message: "Failed to load schools",
+      });
+    }
   });
 
-
+  // =====================================
+  // CREATE SCHOOL
+  // =====================================
   router.post("/", authMiddleware, async (req, res) => {
     try {
       const name = (req.body?.name || "").trim();
-      if (!name) return res.status(400).json({ message: "School name is required" });
 
- 
-      const [existing] = await pool.query(`SELECT id FROM schools WHERE name = ? LIMIT 1`, [name]);
-      if (existing.length) return res.status(409).json({ message: "School already exists" });
+      if (!name) {
+        return res.status(400).json({
+          message: "School name is required",
+        });
+      }
 
-      const [result] = await pool.query(
-        `INSERT INTO schools (name, created_at) VALUES (?, NOW())`,
+      const [existing] = await pool.query(
+        `
+        SELECT id
+        FROM schools
+        WHERE name = ?
+        LIMIT 1
+        `,
         [name]
       );
 
-      res.status(201).json({ id: result.insertId, name });
-    } catch (e) {
-      console.error(e);
-      res.status(500).json({ message: "Failed to add school" });
+      if (existing.length) {
+        return res.status(409).json({
+          message: "School already exists",
+        });
+      }
+
+      const [result] = await pool.query(
+        `
+        INSERT INTO schools
+        (
+          name,
+          created_at
+        )
+        VALUES
+        (
+          ?,
+          NOW()
+        )
+        `,
+        [name]
+      );
+
+      res.status(201).json({
+        id: result.insertId,
+        name,
+        message: "School created successfully",
+      });
+
+    } catch (err) {
+      console.error("CREATE SCHOOL ERROR:", err);
+
+      res.status(500).json({
+        message: "Failed to add school",
+      });
     }
   });
 

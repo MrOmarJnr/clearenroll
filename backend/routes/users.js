@@ -19,6 +19,7 @@ module.exports = (pool, authMiddleware) => {
           u.last_login_at,
           u.last_logout_at,
           u.is_active,
+          u.phone,
           r.name AS role,
           s.name AS school
         FROM users u

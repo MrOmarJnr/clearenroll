@@ -44,6 +44,7 @@ router.post("/", authMiddleware, async (req, res) => {
         CONCAT(t.first_name,' ',t.last_name) LIKE ?
         OR t.phone = ?
         OR t.ghana_card_number = ?
+        AND t.status = 'FLAGGED'
       ORDER BY t.id DESC
       `,
       [`%${query}%`, query, query]
