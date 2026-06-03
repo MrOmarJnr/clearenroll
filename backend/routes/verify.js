@@ -108,7 +108,7 @@ module.exports = (pool, authMiddleware) => {
 
         FROM flags f
         JOIN students s ON s.id = f.student_id
-        JOIN parents p ON p.id = f.parent_id
+        LEFT JOIN parents p ON p.id = f.parent_id
         JOIN schools sc ON sc.id = f.reported_by_school_id
 
         WHERE
